@@ -12,4 +12,6 @@ export const SAMPLES: Sample[] = [
   { file: 'vat-category-E.xml', label: 'VAT category E', note: 'Exempt from VAT' },
   { file: 'base-creditnote-correction.xml', label: 'Credit note', note: 'CreditNote with credited quantities' },
   { file: 'Norwegian-example-1.xml', label: 'Norwegian invoice', note: 'Multi-page, mixed VAT, prepaid + rounding' },
+  { file: 'SK-full-example.xml', label: 'Slovenská faktúra', note: 'SK diacritics, 23 % + 5 % DPH, IBAN, prepaid' },
+  { file: 'SK-validation-example.xml', label: 'SK validation stub', note: 'Minimal SK sample from epostak.sk' },
 ];

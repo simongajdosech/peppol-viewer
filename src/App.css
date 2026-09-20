@@ -198,3 +198,24 @@ main {
 .muted {
   opacity: 0.6;
 }
+
+/* locale switch */
+
+.locale-switch {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1.1rem;
+}
+
+.locale-switch button {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.locale-switch button.active {
+  border-color: #1e4fa3;
+  font-weight: 600;
+}

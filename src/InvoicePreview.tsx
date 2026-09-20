@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { usePDF } from '@react-pdf/renderer';
 import { Document, Page } from 'react-pdf';
 import { InvoiceDocument } from './InvoiceDocument';
+import type { Locale, Translation } from './i18n';
 import type { UblDocument } from './ubl';
 
 const ZOOM_STEPS = [0.6, 0.75, 0.9, 1, 1.25, 1.5];
@@ -11,19 +12,30 @@ const BASE_WIDTH = 720;
  * Renders the invoice once with @react-pdf/renderer and shows those exact bytes
  * with react-pdf, so the preview and the downloaded file cannot drift apart.
  */
-export function InvoicePreview({ invoice }: { invoice: UblDocument }) {
-  const [instance, update] = usePDF({ document: <InvoiceDocument invoice={invoice} /> });
+export function InvoicePreview({
+  invoice,
+  locale,
+  t,
+}: {
+  invoice: UblDocument;
+  locale: Locale;
+  t: Translation;
+}) {
+  const [instance, update] = usePDF({
+    document: <InvoiceDocument invoice={invoice} locale={locale} />,
+  });
   const [pageCount, setPageCount] = useState(0);
   const [zoomIndex, setZoomIndex] = useState(3);
 
   useEffect(() => {
-    update(<InvoiceDocument invoice={invoice} />);
-  }, [invoice, update]);
+    update(<InvoiceDocument invoice={invoice} locale={locale} />);
+  }, [invoice, locale, update]);
 
-  const filename = `${invoice.isCreditNote ? 'creditnote' : 'invoice'}-${invoice.id || 'document'}.pdf`;
+  const kind = invoice.isCreditNote ? 'creditnote' : 'invoice';
+  const filename = `${kind}-${invoice.id || 'document'}-${locale}.pdf`;
 
   if (instance.error) {
-    return <p className="error">Could not render the PDF: {String(instance.error)}</p>;
+    return <p className="error">{String(instance.error)}</p>;
   }
 
   return (
@@ -50,15 +62,15 @@ export function InvoicePreview({ invoice }: { invoice: UblDocument }) {
         </div>
 
         <span className="status">
-          {instance.loading ? 'Rendering…' : pageCount > 0 ? `${pageCount} page(s)` : ''}
+          {instance.loading ? t.rendering : pageCount > 0 ? t.pageCount(pageCount) : ''}
         </span>
 
         {instance.url && !instance.loading ? (
           <a className="download" href={instance.url} download={filename}>
-            Download PDF
+            {t.download}
           </a>
         ) : (
-          <span className="download disabled">Download PDF</span>
+          <span className="download disabled">{t.download}</span>
         )}
       </div>
 
@@ -67,7 +79,7 @@ export function InvoicePreview({ invoice }: { invoice: UblDocument }) {
           <Document
             file={instance.url}
             onLoadSuccess={({ numPages }) => setPageCount(numPages)}
-            loading={<p className="muted">Loading document…</p>}
+            loading={<p className="muted">{t.loadingDocument}</p>}
             error={<p className="error">Failed to open the generated PDF.</p>}
           >
             {Array.from({ length: pageCount }, (_, i) => (

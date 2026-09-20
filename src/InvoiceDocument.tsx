@@ -1,12 +1,7 @@
 import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
-import {
-  formatAddress,
-  formatDate,
-  formatMoney,
-  formatQuantity,
-  type Party,
-  type UblDocument,
-} from './ubl';
+import { PDF_FONT } from './fonts';
+import { translation, type Locale, type Translation } from './i18n';
+import type { Party, UblDocument } from './ubl';
 
 const INK = '#1a1d24';
 const MUTED = '#6b7280';
@@ -20,7 +15,7 @@ const styles = StyleSheet.create({
     paddingBottom: 56,
     paddingHorizontal: 44,
     fontSize: 9,
-    fontFamily: 'Helvetica',
+    fontFamily: PDF_FONT,
     color: INK,
     lineHeight: 1.45,
   },
@@ -28,17 +23,17 @@ const styles = StyleSheet.create({
   /* header */
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 26 },
   supplierBlock: { width: '55%' },
-  supplierName: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: ACCENT, marginBottom: 4 },
+  supplierName: { fontSize: 14, fontWeight: 'bold', color: ACCENT, marginBottom: 4 },
   titleBlock: { width: '40%', alignItems: 'flex-end' },
-  title: { fontSize: 22, fontFamily: 'Helvetica-Bold', letterSpacing: 1.5, textTransform: 'uppercase' },
+  title: { fontSize: 22, fontWeight: 'bold', letterSpacing: 1.5, textTransform: 'uppercase' },
   docId: { fontSize: 11, color: MUTED, marginTop: 2 },
 
   /* generic */
   muted: { color: MUTED },
-  bold: { fontFamily: 'Helvetica-Bold' },
+  bold: { fontWeight: 'bold' },
   sectionTitle: {
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
     letterSpacing: 1,
     textTransform: 'uppercase',
     color: MUTED,
@@ -48,8 +43,9 @@ const styles = StyleSheet.create({
   /* parties + meta */
   columns: { flexDirection: 'row', gap: 18, marginBottom: 22 },
   column: { flex: 1 },
-  partyName: { fontFamily: 'Helvetica-Bold', marginBottom: 2 },
+  partyName: { fontWeight: 'bold', marginBottom: 2 },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
+  metaValue: { fontWeight: 'bold', textAlign: 'right' },
 
   /* line table */
   tableHead: {
@@ -65,7 +61,7 @@ const styles = StyleSheet.create({
     borderBottomColor: RULE,
     paddingVertical: 5,
   },
-  headCell: { fontSize: 8, fontFamily: 'Helvetica-Bold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  headCell: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
   colNo: { width: '6%' },
   colItem: { width: '40%', paddingRight: 8 },
   colQty: { width: '15%', textAlign: 'right' },
@@ -75,8 +71,9 @@ const styles = StyleSheet.create({
 
   /* totals */
   totalsWrap: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 14 },
-  totals: { width: '52%' },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2.5 },
+  totals: { width: '56%' },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, paddingVertical: 2.5 },
+  totalLabel: { flexShrink: 1, color: MUTED },
   totalDivider: { borderTopWidth: 0.5, borderTopColor: RULE, marginTop: 3, paddingTop: 5 },
   payableRow: {
     flexDirection: 'row',
@@ -87,8 +84,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     marginTop: 7,
   },
-  payableLabel: { fontFamily: 'Helvetica-Bold', fontSize: 10, color: '#ffffff' },
-  payableValue: { fontFamily: 'Helvetica-Bold', fontSize: 12, color: '#ffffff' },
+  payableLabel: { fontWeight: 'bold', fontSize: 10, color: '#ffffff' },
+  payableValue: { fontWeight: 'bold', fontSize: 12, color: '#ffffff' },
 
   /* footer blocks */
   band: { backgroundColor: BAND, padding: 10, marginTop: 18 },
@@ -107,11 +104,11 @@ const styles = StyleSheet.create({
   },
 });
 
-function PartyBlock({ label, party }: { label: string; party: Party }) {
+function PartyBlock({ label, party, t }: { label: string; party: Party; t: Translation }) {
   const identifiers = [
     party.legalName && party.legalName !== party.name ? party.legalName : '',
-    party.vatId ? `VAT ${party.vatId}` : '',
-    party.companyId ? `Company ID ${party.companyId}` : '',
+    party.vatId ? `${t.vatId} ${party.vatId}` : '',
+    party.companyId ? `${t.companyId} ${party.companyId}` : '',
     party.endpointId ? `Peppol ${party.endpointScheme}:${party.endpointId}` : '',
     [party.contactName, party.phone, party.email].filter(Boolean).join(' · '),
   ].filter(Boolean);
@@ -120,7 +117,7 @@ function PartyBlock({ label, party }: { label: string; party: Party }) {
     <View style={styles.column}>
       <Text style={styles.sectionTitle}>{label}</Text>
       <Text style={styles.partyName}>{party.name || '—'}</Text>
-      {formatAddress(party.address).map((line) => (
+      {t.address(party.address).map((line) => (
         <Text key={line}>{line}</Text>
       ))}
       {identifiers.map((line) => (
@@ -137,7 +134,7 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.metaRow}>
       <Text style={styles.muted}>{label}</Text>
-      <Text style={styles.bold}>{value}</Text>
+      <Text style={styles.metaValue}>{value}</Text>
     </View>
   );
 }
@@ -153,64 +150,77 @@ function TotalRow({
 }) {
   return (
     <View style={[styles.totalRow, ...(divider ? [styles.totalDivider] : [])]}>
-      <Text style={styles.muted}>{label}</Text>
+      <Text style={styles.totalLabel}>{label}</Text>
       <Text>{value}</Text>
     </View>
   );
 }
 
-export function InvoiceDocument({ invoice }: { invoice: UblDocument }) {
+export function InvoiceDocument({
+  invoice,
+  locale,
+}: {
+  invoice: UblDocument;
+  locale: Locale;
+}) {
+  const t = translation(locale);
   const { totals, currency } = invoice;
-  const money = (amount: number) => formatMoney(amount, currency);
-  const period = [invoice.periodStart, invoice.periodEnd].filter(Boolean).map(formatDate).join(' – ');
+  const money = (amount: number) => t.money(amount, currency);
+  const title = invoice.isCreditNote ? t.creditNote : t.invoice;
+  const period = [invoice.periodStart, invoice.periodEnd].filter(Boolean).map(t.date).join(' – ');
 
   return (
     <Document
-      title={`${invoice.title} ${invoice.id}`}
+      title={`${title} ${invoice.id}`}
       author={invoice.supplier.name}
-      subject={`Peppol BIS Billing 3.0 ${invoice.title}`}
+      subject={`Peppol BIS Billing 3.0 · ${title}`}
+      language={locale}
     >
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View style={styles.supplierBlock}>
             <Text style={styles.supplierName}>{invoice.supplier.name || '—'}</Text>
-            {formatAddress(invoice.supplier.address).map((line) => (
+            {t.address(invoice.supplier.address).map((line) => (
               <Text key={line} style={styles.muted}>
                 {line}
               </Text>
             ))}
           </View>
           <View style={styles.titleBlock}>
-            <Text style={styles.title}>{invoice.title}</Text>
+            <Text style={styles.title}>{title}</Text>
             <Text style={styles.docId}>{invoice.id || '—'}</Text>
           </View>
         </View>
 
         <View style={styles.columns}>
-          <PartyBlock label="Supplier" party={invoice.supplier} />
-          <PartyBlock label={invoice.isCreditNote ? 'Credit to' : 'Bill to'} party={invoice.customer} />
+          <PartyBlock label={t.supplier} party={invoice.supplier} t={t} />
+          <PartyBlock
+            label={invoice.isCreditNote ? t.creditTo : t.billTo}
+            party={invoice.customer}
+            t={t}
+          />
           <View style={styles.column}>
-            <Text style={styles.sectionTitle}>Details</Text>
-            <MetaRow label="Issued" value={formatDate(invoice.issueDate)} />
-            <MetaRow label="Due" value={formatDate(invoice.dueDate)} />
-            <MetaRow label="Delivered" value={formatDate(invoice.deliveryDate)} />
-            <MetaRow label="Period" value={period} />
-            <MetaRow label="Currency" value={invoice.currency} />
-            <MetaRow label="Type code" value={invoice.typeCode} />
-            <MetaRow label="Buyer ref." value={invoice.buyerReference} />
-            <MetaRow label="Order ref." value={invoice.orderReference} />
-            <MetaRow label="Contract" value={invoice.contractReference} />
-            <MetaRow label="Cost centre" value={invoice.accountingCost} />
+            <Text style={styles.sectionTitle}>{t.details}</Text>
+            <MetaRow label={t.issued} value={t.date(invoice.issueDate)} />
+            <MetaRow label={t.due} value={t.date(invoice.dueDate)} />
+            <MetaRow label={t.delivered} value={t.date(invoice.deliveryDate)} />
+            <MetaRow label={t.period} value={period} />
+            <MetaRow label={t.currency} value={invoice.currency} />
+            <MetaRow label={t.typeCode} value={invoice.typeCode} />
+            <MetaRow label={t.buyerRef} value={invoice.buyerReference} />
+            <MetaRow label={t.orderRef} value={invoice.orderReference} />
+            <MetaRow label={t.contract} value={invoice.contractReference} />
+            <MetaRow label={t.costCentre} value={invoice.accountingCost} />
           </View>
         </View>
 
         <View style={styles.tableHead}>
-          <Text style={[styles.headCell, styles.colNo]}>#</Text>
-          <Text style={[styles.headCell, styles.colItem]}>Description</Text>
-          <Text style={[styles.headCell, styles.colQty]}>Qty</Text>
-          <Text style={[styles.headCell, styles.colPrice]}>Unit price</Text>
-          <Text style={[styles.headCell, styles.colVat]}>VAT</Text>
-          <Text style={[styles.headCell, styles.colAmount]}>Amount</Text>
+          <Text style={[styles.headCell, styles.colNo]}>{t.colNo}</Text>
+          <Text style={[styles.headCell, styles.colItem]}>{t.colItem}</Text>
+          <Text style={[styles.headCell, styles.colQty]}>{t.colQty}</Text>
+          <Text style={[styles.headCell, styles.colPrice]}>{t.colPrice}</Text>
+          <Text style={[styles.headCell, styles.colVat]}>{t.colVat}</Text>
+          <Text style={[styles.headCell, styles.colAmount]}>{t.colAmount}</Text>
         </View>
 
         {invoice.lines.map((line, index) => (
@@ -222,13 +232,13 @@ export function InvoiceDocument({ invoice }: { invoice: UblDocument }) {
               {!!line.note && <Text style={styles.muted}>{line.note}</Text>}
             </View>
             <Text style={styles.colQty}>
-              {formatQuantity(line.quantity)}
+              {t.quantity(line.quantity)}
               {line.unitCode ? ` ${line.unitCode}` : ''}
             </Text>
             <Text style={styles.colPrice}>{money(line.unitPrice)}</Text>
             <Text style={styles.colVat}>
               {line.taxCategory}
-              {line.taxPercent ? ` ${line.taxPercent}%` : ''}
+              {line.taxPercent ? ` ${t.percent(line.taxPercent)}` : ''}
             </Text>
             <Text style={styles.colAmount}>{money(line.amount)}</Text>
           </View>
@@ -236,40 +246,42 @@ export function InvoiceDocument({ invoice }: { invoice: UblDocument }) {
 
         <View style={styles.totalsWrap} wrap={false}>
           <View style={styles.totals}>
-            <TotalRow label="Sum of line amounts" value={money(totals.lineExtension)} />
+            <TotalRow label={t.sumOfLines} value={money(totals.lineExtension)} />
             {invoice.allowanceCharges.map((ac, index) => (
               <TotalRow
                 key={`${ac.reason}-${index}`}
-                label={`${ac.isCharge ? 'Charge' : 'Allowance'}: ${ac.reason || '—'}`}
+                label={`${ac.isCharge ? t.charge : t.allowance}: ${ac.reason || '—'}`}
                 value={money(ac.isCharge ? ac.amount : -ac.amount)}
               />
             ))}
-            <TotalRow label="Total excl. VAT" value={money(totals.taxExclusive)} divider />
+            <TotalRow label={t.totalExclVat} value={money(totals.taxExclusive)} divider />
             {invoice.taxSubtotals.map((tax, index) => (
               <TotalRow
                 key={`${tax.category}-${index}`}
-                label={`VAT ${tax.category}${tax.percent ? ` ${tax.percent}%` : ''} on ${money(tax.taxableAmount)}`}
+                label={t.vatOn(tax.category, tax.percent ? t.percent(tax.percent) : '', money(tax.taxableAmount))}
                 value={money(tax.taxAmount)}
               />
             ))}
-            <TotalRow label="Total incl. VAT" value={money(totals.taxInclusive)} divider />
-            {totals.prepaid !== 0 && <TotalRow label="Prepaid" value={money(-totals.prepaid)} />}
-            {totals.rounding !== 0 && <TotalRow label="Rounding" value={money(totals.rounding)} />}
+            <TotalRow label={t.totalInclVat} value={money(totals.taxInclusive)} divider />
+            {totals.prepaid !== 0 && <TotalRow label={t.prepaid} value={money(-totals.prepaid)} />}
+            {totals.rounding !== 0 && <TotalRow label={t.rounding} value={money(totals.rounding)} />}
             <View style={styles.payableRow}>
-              <Text style={styles.payableLabel}>Amount due ({currency})</Text>
+              <Text style={styles.payableLabel}>
+                {t.amountDue} ({currency})
+              </Text>
               <Text style={styles.payableValue}>{money(totals.payable)}</Text>
             </View>
           </View>
         </View>
 
-        {invoice.taxSubtotals.some((t) => t.exemptionReason) && (
+        {invoice.taxSubtotals.some((tax) => tax.exemptionReason) && (
           <View style={styles.band} wrap={false}>
-            <Text style={styles.sectionTitle}>VAT exemption</Text>
+            <Text style={styles.sectionTitle}>{t.vatExemption}</Text>
             {invoice.taxSubtotals
-              .filter((t) => t.exemptionReason)
-              .map((t, index) => (
+              .filter((tax) => tax.exemptionReason)
+              .map((tax, index) => (
                 <Text key={index}>
-                  {t.category}: {t.exemptionReason}
+                  {tax.category}: {tax.exemptionReason}
                 </Text>
               ))}
           </View>
@@ -277,12 +289,12 @@ export function InvoiceDocument({ invoice }: { invoice: UblDocument }) {
 
         {(invoice.paymentMeans.length > 0 || !!invoice.paymentTerms) && (
           <View style={styles.band} wrap={false}>
-            <Text style={styles.sectionTitle}>Payment</Text>
+            <Text style={styles.sectionTitle}>{t.payment}</Text>
             {invoice.paymentMeans.map((pm, index) => (
               <View key={index}>
                 {!!pm.account && (
                   <Text>
-                    <Text style={styles.bold}>Account </Text>
+                    <Text style={styles.bold}>{t.account} </Text>
                     {pm.account}
                     {pm.bic ? ` · BIC ${pm.bic}` : ''}
                     {pm.accountName ? ` · ${pm.accountName}` : ''}
@@ -290,11 +302,11 @@ export function InvoiceDocument({ invoice }: { invoice: UblDocument }) {
                 )}
                 {!!pm.paymentId && (
                   <Text>
-                    <Text style={styles.bold}>Reference </Text>
+                    <Text style={styles.bold}>{t.paymentReference} </Text>
                     {pm.paymentId}
                   </Text>
                 )}
-                {!!pm.name && <Text style={styles.muted}>{`${pm.name} (code ${pm.code})`}</Text>}
+                {!!pm.name && <Text style={styles.muted}>{`${pm.name} (${pm.code})`}</Text>}
               </View>
             ))}
             {!!invoice.paymentTerms && <Text style={styles.muted}>{invoice.paymentTerms}</Text>}
@@ -303,7 +315,7 @@ export function InvoiceDocument({ invoice }: { invoice: UblDocument }) {
 
         {invoice.notes.length > 0 && (
           <View style={styles.band} wrap={false}>
-            <Text style={styles.sectionTitle}>Notes</Text>
+            <Text style={styles.sectionTitle}>{t.notes}</Text>
             {invoice.notes.map((note, index) => (
               <Text key={index}>{note}</Text>
             ))}
@@ -312,9 +324,9 @@ export function InvoiceDocument({ invoice }: { invoice: UblDocument }) {
 
         <View style={styles.footer} fixed>
           <Text>
-            {invoice.title} {invoice.id} · Peppol BIS Billing 3.0
+            {title} {invoice.id} · Peppol BIS Billing 3.0
           </Text>
-          <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+          <Text render={({ pageNumber, totalPages }) => t.page(pageNumber, totalPages)} />
         </View>
       </Page>
     </Document>

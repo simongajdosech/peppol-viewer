@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Syntetická vzorová faktúra (Peppol BIS Billing 3.0) pre slovenské prostredie.
+  Fiktívne subjekty a identifikátory - neodosielať do produkčnej siete.
+  Synthetic Slovak sample authored for this project; not an official OpenPEPPOL file.
+-->
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+  <cbc:ID>FA2026-0042</cbc:ID>
+  <cbc:IssueDate>2026-09-15</cbc:IssueDate>
+  <cbc:DueDate>2026-09-29</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:Note>Ďakujeme za spoluprácu. Pri úhrade uvádzajte variabilný symbol.</cbc:Note>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cbc:AccountingCost>Stredisko 4200</cbc:AccountingCost>
+  <cbc:BuyerReference>OBJ-2026-311</cbc:BuyerReference>
+
+  <cac:InvoicePeriod>
+    <cbc:StartDate>2026-08-01</cbc:StartDate>
+    <cbc:EndDate>2026-08-31</cbc:EndDate>
+  </cac:InvoicePeriod>
+
+  <cac:OrderReference>
+    <cbc:ID>OBJ-2026-311</cbc:ID>
+  </cac:OrderReference>
+
+  <cac:ContractDocumentReference>
+    <cbc:ID>ZML-2024-118</cbc:ID>
+  </cac:ContractDocumentReference>
+
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0245">2022567890</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>Slovenské softvérové riešenia</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Mlynské nivy 12</cbc:StreetName>
+        <cbc:AdditionalStreetName>Budova B, 4. poschodie</cbc:AdditionalStreetName>
+        <cbc:CityName>Bratislava</cbc:CityName>
+        <cbc:PostalZone>821 09</cbc:PostalZone>
+        <cbc:CountrySubentity>Bratislavský kraj</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>SK</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>SK2022567890</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Slovenské softvérové riešenia, s. r. o.</cbc:RegistrationName>
+        <cbc:CompanyID>36854321</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>Ing. Ľubomír Kováč</cbc:Name>
+        <cbc:Telephone>+421 2 5556 7788</cbc:Telephone>
+        <cbc:ElectronicMail>fakturacia@ssr-priklad.sk</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0245">2023114455</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>Tatranská obchodná spoločnosť</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Hlavná 47</cbc:StreetName>
+        <cbc:CityName>Košice</cbc:CityName>
+        <cbc:PostalZone>040 01</cbc:PostalZone>
+        <cbc:CountrySubentity>Košický kraj</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>SK</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>SK2023114455</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Tatranská obchodná spoločnosť, a. s.</cbc:RegistrationName>
+        <cbc:CompanyID>31654987</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>Mgr. Zuzana Hrubá</cbc:Name>
+        <cbc:Telephone>+421 55 623 1199</cbc:Telephone>
+        <cbc:ElectronicMail>uctaren@tos-priklad.sk</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+
+  <cac:Delivery>
+    <cbc:ActualDeliveryDate>2026-08-31</cbc:ActualDeliveryDate>
+  </cac:Delivery>
+
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode name="Prevodný príkaz">30</cbc:PaymentMeansCode>
+    <cbc:PaymentID>2026000042</cbc:PaymentID>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>SK3112000000198742637541</cbc:ID>
+      <cbc:Name>Slovenské softvérové riešenia, s. r. o.</cbc:Name>
+      <cac:FinancialInstitutionBranch>
+        <cbc:ID>TATRSKBX</cbc:ID>
+      </cac:FinancialInstitutionBranch>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+
+  <cac:PaymentTerms>
+    <cbc:Note>Splatnosť 14 dní od vystavenia. Pri omeškaní úrok 0,05 % denne.</cbc:Note>
+  </cac:PaymentTerms>
+
+  <cac:AllowanceCharge>
+    <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+    <cbc:AllowanceChargeReason>Zľava za dlhodobú spoluprácu</cbc:AllowanceChargeReason>
+    <cbc:Amount currencyID="EUR">40.00</cbc:Amount>
+    <cac:TaxCategory>
+      <cbc:ID>S</cbc:ID>
+      <cbc:Percent>23</cbc:Percent>
+      <cac:TaxScheme>
+        <cbc:ID>VAT</cbc:ID>
+      </cac:TaxScheme>
+    </cac:TaxCategory>
+  </cac:AllowanceCharge>
+
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">397.00</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">1700.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">391.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>23</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">120.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">6.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>5</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">1860.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">1820.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">2217.00</cbc:TaxInclusiveAmount>
+    <cbc:AllowanceTotalAmount currencyID="EUR">40.00</cbc:AllowanceTotalAmount>
+    <cbc:PrepaidAmount currencyID="EUR">200.00</cbc:PrepaidAmount>
+    <cbc:PayableAmount currencyID="EUR">2017.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:Note>Vrátane cestovných nákladov v rámci Bratislavy.</cbc:Note>
+    <cbc:InvoicedQuantity unitCode="HUR">12</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">1020.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Konzultačné služby</cbc:Name>
+      <cbc:Description>Analýza účtovných procesov a návrh úprav</cbc:Description>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>23</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">85.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="H87">3</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">720.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Licencia softvéru Účtovník</cbc:Name>
+      <cbc:Description>Ročná licencia pre jedného používateľa</cbc:Description>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>23</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">240.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+
+  <cac:InvoiceLine>
+    <cbc:ID>3</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="H87">5</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">120.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Odborná publikácia</cbc:Name>
+      <cbc:Description>Zákon o DPH s komentárom, vydanie 2026</cbc:Description>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>5</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">24.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>

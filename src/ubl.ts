@@ -109,7 +109,6 @@ export type Totals = {
 
 export type UblDocument = {
   isCreditNote: boolean;
-  title: string;
   id: string;
   issueDate: string;
   dueDate: string;
@@ -247,7 +246,6 @@ export function parseUbl(xml: string): UblDocument {
 
   return {
     isCreditNote,
-    title: isCreditNote ? 'Credit Note' : 'Invoice',
     id: val(root, CBC, 'ID'),
     issueDate: val(root, CBC, 'IssueDate'),
     dueDate: val(root, CBC, 'DueDate'),
@@ -316,28 +314,3 @@ export function parseUbl(xml: string): UblDocument {
   };
 }
 
-/* ---------- display helpers ---------- */
-
-export function formatMoney(amount: number, currency: string): string {
-  return new Intl.NumberFormat('en-GB', {
-    style: currency ? 'currency' : 'decimal',
-    currency: currency || undefined,
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
-
-export function formatQuantity(quantity: number): string {
-  return new Intl.NumberFormat('en-GB', { maximumFractionDigits: 4 }).format(quantity);
-}
-
-export function formatDate(iso: string): string {
-  if (!iso) return '';
-  const date = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeZone: 'UTC' }).format(date);
-}
-
-export function formatAddress(address: Address): string[] {
-  const locality = [address.postalZone, address.city].filter(Boolean).join(' ');
-  return [...address.lines, locality, address.subentity, address.country].filter(Boolean);
-}

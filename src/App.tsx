@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { SAMPLES } from './samples';
 import { parseUbl, type UblDocument } from './ubl';
+import { LOCALES, translation, type Locale } from './i18n';
 import { InvoicePreview } from './InvoicePreview';
 import './App.css';
 
@@ -15,10 +16,13 @@ type Source = { label: string; xml: string };
 
 export default function App() {
   const [selected, setSelected] = useState(SAMPLES[0].file);
+  const [locale, setLocale] = useState<Locale>('en');
   const [source, setSource] = useState<Source | null>(null);
   const [invoice, setInvoice] = useState<UblDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showXml, setShowXml] = useState(false);
+
+  const t = useMemo(() => translation(locale), [locale]);
 
   function load(label: string, xml: string) {
     try {
@@ -67,7 +71,20 @@ export default function App() {
     <div className="app">
       <aside>
         <h1>Peppol Viewer</h1>
-        <p className="tagline">UBL / Peppol BIS Billing 3.0 → printable document</p>
+        <p className="tagline">{t.appTagline}</p>
+
+        <div className="locale-switch" role="group" aria-label={t.language}>
+          {LOCALES.map((option) => (
+            <button
+              key={option.code}
+              type="button"
+              className={option.code === locale ? 'active' : ''}
+              onClick={() => setLocale(option.code)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
 
         <ul>
           {SAMPLES.map((sample) => (
@@ -85,17 +102,17 @@ export default function App() {
         </ul>
 
         <label className="file-input">
-          Open your own XML…
+          {t.openOwnFile}
           <input type="file" accept=".xml,text/xml,application/xml" onChange={onFile} />
         </label>
       </aside>
 
       <main>
         <header className="main-header">
-          <h2>{source?.label ?? 'Loading…'}</h2>
+          <h2>{source?.label ?? '…'}</h2>
           {!!source && (
             <button type="button" className="toggle" onClick={() => setShowXml((v) => !v)}>
-              {showXml ? 'Show document' : 'Show XML'}
+              {showXml ? t.showDocument : t.showXml}
             </button>
           )}
         </header>
@@ -105,7 +122,9 @@ export default function App() {
         {showXml && source ? (
           <pre className="xml">{source.xml}</pre>
         ) : (
-          invoice && <InvoicePreview key={source?.label} invoice={invoice} />
+          invoice && (
+            <InvoicePreview key={source?.label} invoice={invoice} locale={locale} t={t} />
+          )
         )}
       </main>
     </div>
