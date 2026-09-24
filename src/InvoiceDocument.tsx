@@ -382,7 +382,10 @@ export function InvoiceDocument({
 
         {extraParties.length > 0 && <Columns slots={extraParties} />}
 
-        <View style={styles.tableHead}>
+        {/* `fixed` repeats the column headers at the top of every page — a multi-page
+            document would otherwise continue into bare columns of numbers. It re-renders
+            per page, so it must stay free of per-row state. */}
+        <View style={styles.tableHead} fixed>
           <Text style={[styles.headCell, styles.colNo]}>{t.colNo}</Text>
           <Text style={[styles.headCell, styles.colItem]}>{t.colItem}</Text>
           <Text style={[styles.headCell, styles.colQty]}>{t.colQty}</Text>

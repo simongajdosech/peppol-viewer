@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
-import { pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/TextLayer.css';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { SAMPLES } from './samples';
 import { parseUbl, type UblDocument } from './ubl';
 import { LOCALES, translation, type Locale } from './i18n';
-import { InvoicePreview } from './InvoicePreview';
 import './App.css';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+/**
+ * @react-pdf/renderer and react-pdf together are most of the bundle, and nothing
+ * outside the document view needs either — the sidebar, the sample list and the XML
+ * view render without them. Keeping them behind a dynamic import lets the shell paint
+ * before that chunk has even been fetched.
+ */
+const loadPreview = () => import('./InvoicePreview');
+const InvoicePreview = lazy(() => loadPreview().then((m) => ({ default: m.InvoicePreview })));
 
 type Source = { label: string; xml: string };
 
@@ -23,6 +24,13 @@ export default function App() {
   const [showXml, setShowXml] = useState(false);
 
   const t = useMemo(() => translation(locale), [locale]);
+
+  // Start pulling the PDF chunk down as soon as the shell mounts, alongside the fetch
+  // of the first sample, so splitting it out costs nothing in time-to-document. React
+  // reuses this same module promise when Suspense resolves the lazy component.
+  useEffect(() => {
+    void loadPreview();
+  }, []);
 
   function load(label: string, xml: string) {
     try {
@@ -123,7 +131,9 @@ export default function App() {
           <pre className="xml">{source.xml}</pre>
         ) : (
           invoice && (
-            <InvoicePreview key={source?.label} invoice={invoice} locale={locale} t={t} />
+            <Suspense fallback={<p className="muted">{t.loadingDocument}</p>}>
+              <InvoicePreview key={source?.label} invoice={invoice} locale={locale} t={t} />
+            </Suspense>
           )
         )}
       </main>

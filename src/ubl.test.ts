@@ -200,6 +200,33 @@ describe('repeated TaxTotal', () => {
   it('reads the VAT breakdown once', () => {
     expect(parseUbl(twoTotals).taxSubtotals).toHaveLength(1);
   });
+
+  it('ignores a breakdown repeated in the accounting currency', () => {
+    // BIS says the second TaxTotal carries only TaxAmount, but a sender that also
+    // restates the subtotals must not make the VAT rows print twice.
+    const result = parseUbl(doc(`
+      <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+      <cbc:TaxCurrencyCode>SEK</cbc:TaxCurrencyCode>
+      <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="EUR">1225.00</cbc:TaxAmount>
+        <cac:TaxSubtotal>
+          <cbc:TaxableAmount currencyID="EUR">4900.00</cbc:TaxableAmount>
+          <cbc:TaxAmount currencyID="EUR">1225.00</cbc:TaxAmount>
+          <cac:TaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>25</cbc:Percent></cac:TaxCategory>
+        </cac:TaxSubtotal>
+      </cac:TaxTotal>
+      <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="SEK">9324.00</cbc:TaxAmount>
+        <cac:TaxSubtotal>
+          <cbc:TaxableAmount currencyID="SEK">37296.00</cbc:TaxableAmount>
+          <cbc:TaxAmount currencyID="SEK">9324.00</cbc:TaxAmount>
+          <cac:TaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>25</cbc:Percent></cac:TaxCategory>
+        </cac:TaxSubtotal>
+      </cac:TaxTotal>`));
+
+    expect(result.taxSubtotals).toHaveLength(1);
+    expect(result.taxSubtotals[0].taxableAmount).toBe(4900);
+  });
 });
 
 describe('credit notes', () => {
@@ -263,7 +290,47 @@ describe('malformed input', () => {
     expect(() => parseUbl('')).toThrow();
   });
 
-  // Phase 2: parseUbl currently returns an empty document for any well-formed
-  // XML, so an Order or a CII invoice renders as a blank invoice.
-  it.todo('throws when the root element is not an Invoice or CreditNote');
+});
+
+describe('root element guard', () => {
+  it('accepts an Invoice and a CreditNote', () => {
+    expect(parseUbl(doc('<cbc:ID>1</cbc:ID>')).isCreditNote).toBe(false);
+    expect(parseUbl(doc('<cbc:ID>1</cbc:ID>', 'CreditNote')).isCreditNote).toBe(true);
+  });
+
+  it('rejects another UBL document type', () => {
+    // Would otherwise parse to an empty document and render as a blank invoice.
+    const order = `<?xml version="1.0" encoding="UTF-8"?>
+      <Order xmlns="urn:oasis:names:specification:ubl:schema:xsd:Order-2"
+        xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+        <cbc:ID>ORD-1</cbc:ID>
+      </Order>`;
+
+    expect(() => parseUbl(order)).toThrow(/Order/);
+  });
+
+  it('rejects a CII invoice, which uses a different root entirely', () => {
+    const cii = `<?xml version="1.0" encoding="UTF-8"?>
+      <rsm:CrossIndustryInvoice
+        xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100">
+        <rsm:ExchangedDocument/>
+      </rsm:CrossIndustryInvoice>`;
+
+    expect(() => parseUbl(cii)).toThrow(/CrossIndustryInvoice/);
+  });
+
+  it('rejects an Invoice element that is not in the UBL namespace', () => {
+    expect(() => parseUbl('<Invoice><ID>1</ID></Invoice>')).toThrow(/namespace/);
+  });
+
+  it('rejects an Invoice carrying the CreditNote namespace', () => {
+    const swapped = `<?xml version="1.0" encoding="UTF-8"?>
+      <Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2"/>`;
+
+    expect(() => parseUbl(swapped)).toThrow(/namespace/);
+  });
+
+  it('names what it found, so the message is actionable', () => {
+    expect(() => parseUbl('<Order/>')).toThrow(/expected <Invoice> or <CreditNote>/);
+  });
 });

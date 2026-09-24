@@ -1,6 +1,12 @@
 const CBC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2';
 const CAC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2';
 
+/** The two document types this parser understands, by root element and namespace. */
+const ROOTS = {
+  Invoice: 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
+  CreditNote: 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2',
+} as const;
+
 /* ---------- namespace-aware, direct-child traversal ---------- */
 
 function kids(el: Element | null, ns: string, name: string): Element[] {
@@ -479,6 +485,23 @@ export function parseUbl(xml: string): UblDocument {
   if (failure) throw new Error(failure.textContent?.trim() || 'Invalid XML');
 
   const root = doc.documentElement;
+
+  // Without this guard any well-formed XML — an Order, a CII invoice, an unrelated
+  // document — parses to an empty UblDocument and renders as a blank invoice, because
+  // every lookup below simply finds nothing.
+  if (!(root.localName in ROOTS)) {
+    throw new Error(
+      `Not a UBL invoice: expected <Invoice> or <CreditNote>, found <${root.localName}>.`,
+    );
+  }
+  const expectedNamespace = ROOTS[root.localName as keyof typeof ROOTS];
+  if (root.namespaceURI !== expectedNamespace) {
+    throw new Error(
+      `<${root.localName}> is not in the UBL namespace: expected ${expectedNamespace}, ` +
+        `found ${root.namespaceURI ?? 'no namespace'}.`,
+    );
+  }
+
   const isCreditNote = root.localName === 'CreditNote';
   const totalsEl = kid(root, CAC, 'LegalMonetaryTotal');
   const period = kid(root, CAC, 'InvoicePeriod');
@@ -533,7 +556,9 @@ export function parseUbl(xml: string): UblDocument {
     taxRepresentative: parseOptionalParty(root, 'TaxRepresentativeParty'),
     delivery: parseDelivery(root),
     lines: parseLines(root, isCreditNote),
-    taxSubtotals: taxTotals.flatMap(parseTaxSubtotals),
+    // Only the first TaxTotal's breakdown belongs to the document currency; folding in
+    // the accounting-currency restatement would print the VAT rows twice.
+    taxSubtotals: parseTaxSubtotals(taxTotals[0] ?? null),
     taxAmountInTaxCurrency: secondaryTotal ? num(val(secondaryTotal, CBC, 'TaxAmount')) : null,
     allowanceCharges: kids(root, CAC, 'AllowanceCharge').map(parseAllowanceCharge),
     paymentMeans: kids(root, CAC, 'PaymentMeans').map(parsePaymentMeans),

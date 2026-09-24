@@ -39,58 +39,107 @@ sample documents already sitting in `public/samples/`. That is the ideal test ta
 new `tsconfig.test.json` (referenced from `tsconfig.json`), so `tsc -b` still type-checks
 them without leaking Node globals into the app sources.
 
-Two `it.todo` markers are parked in the suite for work scheduled below — the root-element
-guard (Phase 2) and the Slovak zero plural (Phase 3.6). Turn each into a real test when
-the fix lands.
+One `it.todo` marker is parked in the suite for work scheduled below — the Slovak zero
+plural (Phase 3.6). Turn it into a real test when the fix lands. (The root-element guard
+todo became a real `describe` block when Phase 2 landed.)
 
 ---
 
-## Phase 2 - Correctness fixes
+## Phase 2 - Correctness fixes — **DONE**
 
-**Priority: high.** All four are small and independent.
+**Priority: high.** All four were small and independent.
 
-- [ ] **Root-element guard** - `src/ubl.ts:481`.
-      `parseUbl` only checks for a `parsererror`. Any other well-formed XML (an `Order`,
-      a CII invoice, an unrelated document) makes every `kid()` lookup return null and
-      yields an empty `UblDocument` that renders as a blank invoice. Assert that
-      `root.localName` is `Invoice` or `CreditNote` **and** that the root namespace is the
-      matching UBL one; throw a readable error otherwise.
+- [x] **Root-element guard** - `src/ubl.ts`.
+      `parseUbl` only checked for a `parsererror`. Any other well-formed XML (an `Order`,
+      a CII invoice, an unrelated document) made every `kid()` lookup return null and
+      yielded an empty `UblDocument` that rendered as a blank invoice. It now asserts both
+      the root element (`Invoice` / `CreditNote`, from the new `ROOTS` table) and its
+      namespace, and throws a message naming what it actually found. `App.tsx` already
+      catches parse errors, so the user now sees that message instead of a blank page.
 
-- [ ] **VAT breakdown can print twice** - `src/ubl.ts:536`.
-      `taxTotals.flatMap(parseTaxSubtotals)` folds in subtotals from *every* `TaxTotal`,
-      but the second one is the accounting-currency restatement whose `TaxAmount` is
-      already handled separately. BIS says it carries only `TaxAmount`, so this is latent
-      rather than visible - take the breakdown from `taxTotals[0]` only.
+- [x] **VAT breakdown can print twice** - `src/ubl.ts`.
+      `taxTotals.flatMap(parseTaxSubtotals)` folded in subtotals from *every* `TaxTotal`;
+      now reads `taxTotals[0]` only. No snapshot changed, confirming the bug was latent —
+      a regression test with a subtotal deliberately repeated in the accounting currency
+      covers it.
 
-- [ ] **Repeat the table header across pages** - `src/InvoiceDocument.tsx:385`.
-      `Norwegian-example-1.xml` is multi-page, so page 2 currently shows bare columns of
-      numbers. Add `fixed` to the `tableHead` view. Note that `fixed` re-renders the node
-      on every page, so keep it free of per-row state.
+- [x] **Repeat the table header across pages** - `src/InvoiceDocument.tsx`.
+      `fixed` added to the `tableHead` view. Verified by rendering
+      `Norwegian-example-1.xml` and reading the text back off both pages; before the fix,
+      page 2 began at `4 Returned IBM 5150 desktop` with no header at all.
 
-- [ ] **Declare `pdfjs-dist`** - imported directly at `src/App.tsx:10` but resolved from a
-      transitive dependency of `react-pdf`. A react-pdf bump can swap the pdfjs major
-      underneath and break the worker URL silently. Add it to `dependencies`, pinned to
-      the version react-pdf 11 expects (currently 6.3.x).
+- [x] **Declare `pdfjs-dist`** - pinned to exactly `6.3.289`, which is what `react-pdf`
+      itself pins (not a range), so there is one copy and no drift.
+
+**Also added: `src/pdf.smoke.test.tsx`.** Renders documents with
+`@react-pdf/renderer` and reads the text back with `pdfjs-dist`, covering the repeating
+table header, the fixed footer, and that Slovak diacritics survive into the PDF. Two
+things to know about it:
+
+- It must run under `// @vitest-environment node`. Under jsdom, `@react-pdf` takes its
+  browser code path and emits flate streams `pdfjs` cannot read back (`Bad FCHECK in
+  flate stream`), so every page comes out with zero text items. The file supplies
+  `DOMParser` from jsdom by hand instead.
+- Headings are letter-spaced, so `Unit price` comes back as `U N I T   P R I C E`. The
+  helper compares with whitespace removed.
 
 ---
 
 ## Phase 3 - Features
 
-### 3.1 Lazy-load the PDF stack - **priority: high**
+### 3.1 Lazy-load the PDF stack - **priority: high** — **DONE**
 
-Current production build is one 2.08 MB chunk (712 kB gzipped) plus a 1.27 MB pdf worker,
+The production build was one 2.08 MB chunk (712 kB gzipped) plus a 1.27 MB pdf worker,
 all eager. Neither `@react-pdf/renderer` nor `react-pdf` is needed to show the sidebar,
 the sample list or the XML view.
 
-- [ ] `React.lazy` + `Suspense` around `InvoicePreview`, so both PDF libraries land in a
-      separate chunk fetched only when the document view is actually shown.
-- [ ] Move the `pdfjs.GlobalWorkerOptions.workerSrc` assignment (`src/App.tsx:10`) out of
-      `App.tsx` and into the lazily loaded module - otherwise importing `pdfjs` from
-      `react-pdf` at the top level drags the whole chunk back into the entry bundle.
-- [ ] Same treatment for `registerPdfFonts` in `src/main.tsx`, which imports
-      `@react-pdf/renderer` at the entry point.
-- [ ] Verify with `npm run build` that the entry chunk actually shrank; the point is the
-      first paint, so check what the *entry* pulls, not just the total.
+- [x] `React.lazy` + `Suspense` around `InvoicePreview`, with `t.loadingDocument` as the
+      fallback.
+- [x] Moved the `pdfjs.GlobalWorkerOptions.workerSrc` assignment out of `App.tsx` and
+      into `InvoicePreview.tsx`, along with the `react-pdf` TextLayer stylesheet.
+- [x] Moved the `registerPdfFonts` call out of `src/main.tsx` for the same reason, into
+      `InvoicePreview.tsx`. `registerPdfFonts` still takes its base URL as an argument, so
+      the Node render path (and `pdf.smoke.test.tsx`) can point it at local files.
+- [x] `InvoicePreview.tsx` is now the single entry to the PDF stack and carries a comment
+      saying so, because importing any part of it from `main.tsx` or `App.tsx` silently
+      undoes the split.
+- [x] Added a prefetch: `App` kicks off the dynamic import on mount, unawaited, so the
+      chunk downloads in parallel with the first sample fetch. React reuses the same
+      module promise when Suspense resolves the component, so this costs nothing and
+      keeps time-to-document roughly where it was while the shell paints immediately.
+
+**Regression found and fixed after the fact: the preview flickered.** Worth recording,
+because the cause is not obvious and it only showed up in the running app.
+
+react-pdf 11's `<Document>` defaults to **`suspense={true}`**: it loads through
+`use(resource.promise)` and genuinely suspends. The original code had no Suspense
+boundary anywhere, so React simply waited at the root and committed once the promise
+resolved — the default was invisible. Adding a boundary for the lazy chunk put one in the
+path of the *document's own* suspension: React hid the subtree
+(`style="display: none !important"`) and showed the fallback, the resource never
+committed, and the retry cycle regenerated the PDF about once a second. That is the
+flicker, and the blob churn that came with it.
+
+The fix is `suspense={false}` on `<Document>` in `InvoicePreview.tsx`. It restores the
+effect-based load this viewer was written against — the `loading` and `error` props it
+already passes only apply in that mode, and were dead props under the v11 default.
+
+A second, separate dev-server effect contributed to what was on screen: editing
+`vite.config.ts` and `package.json` while a dev server was running made Vite re-optimise
+dependencies mid-session and serve a second copy of React, so `usePDF` threw
+"Invalid hook call". A cold `npm run dev` does not reproduce it, but naming the PDF
+packages in `optimizeDeps.include` keeps them off the discovered-late path. Production
+builds were never affected by either problem.
+
+**Checked in the browser after the fix:** no console errors, the preview stable with zero
+PDF regenerations over 10 s idle, and sample switching, locale switching and the Slovak
+document (diacritics intact) all working.
+
+**Result.** Entry chunk **2,083.65 kB → 237.68 kB**, gzipped **711.66 kB → 75.33 kB**
+(-89%). The PDF stack is a 1,845.88 kB (638.12 kB gzipped) chunk, and the react-pdf CSS
+split out with it. Verified in a browser against `npm run preview`: no console errors,
+and the network log shows the entry chunk and CSS first, then the preview chunk in
+parallel with the sample fetch, then fonts, worker, and the PDF blob.
 
 ### 3.2 Decode the code lists - **priority: high**
 

@@ -1,9 +1,25 @@
 import { useEffect, useState } from 'react';
 import { usePDF } from '@react-pdf/renderer';
-import { Document, Page } from 'react-pdf';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/TextLayer.css';
 import { InvoiceDocument } from './InvoiceDocument';
+import { registerPdfFonts } from './fonts';
 import type { Locale, Translation } from './i18n';
 import type { UblDocument } from './ubl';
+
+/**
+ * This module is the single entry to the PDF stack, and App loads it lazily — both
+ * libraries together are the bulk of the bundle and neither is needed to show the
+ * sidebar or the XML view. So the one-time setup they need lives here rather than in
+ * main.tsx, where importing either one would pull the whole stack back into the
+ * entry chunk.
+ */
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
+
+registerPdfFonts(`${import.meta.env.BASE_URL}fonts/`);
 
 const ZOOM_STEPS = [0.6, 0.75, 0.9, 1, 1.25, 1.5];
 const BASE_WIDTH = 720;
@@ -78,6 +94,12 @@ export function InvoicePreview({
         {instance.url && (
           <Document
             file={instance.url}
+            // react-pdf 11 defaults to suspense={true}, where the document loads through
+            // `use()` and the component suspends. This viewer reports progress with the
+            // `loading` and `error` props below, which only apply in the effect-based
+            // mode — and the App-level Suspense boundary that loads this chunk would
+            // otherwise catch the document's own suspension and flicker its fallback.
+            suspense={false}
             onLoadSuccess={({ numPages }) => setPageCount(numPages)}
             loading={<p className="muted">{t.loadingDocument}</p>}
             error={<p className="error">Failed to open the generated PDF.</p>}

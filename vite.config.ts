@@ -4,9 +4,17 @@ import { defineConfig } from 'vitest/config'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    // The PDF stack is reachable only through the dynamic import in App. The dev
+    // server's cold scan does find it, but naming it here keeps it out of the
+    // discovered-late path, where Vite re-optimises mid-session and reloads the page
+    // with a second copy of React — which surfaces as "Invalid hook call" in usePDF.
+    // Not needed for the production build, which bundles everything up front.
+    include: ['@react-pdf/renderer', 'react-pdf'],
+  },
   test: {
     // parseUbl builds on DOMParser, which only exists in a DOM environment.
     environment: 'jsdom',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 })

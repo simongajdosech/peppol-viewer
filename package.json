@@ -13,11 +13,13 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
+    "pdfjs-dist": "6.3.289",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-pdf": "^11.0.0"
   },
   "devDependencies": {
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

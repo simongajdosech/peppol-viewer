@@ -5,8 +5,11 @@ import { Font } from '@react-pdf/renderer';
  * text would silently lose its diacritics. PT Sans covers Latin Extended-A and is
  * shipped locally, which also keeps rendering working offline.
  *
- * Registration is an explicit entry-point step rather than an import side effect,
- * so a non-browser caller (a Node render script) can point it at local files.
+ * Registration takes the base URL as an argument rather than reaching for one itself,
+ * so a non-browser caller (a Node render script, the PDF tests) can point it at local
+ * files. The browser call sits in InvoicePreview, the lazily loaded entry to the PDF
+ * stack — calling it from main.tsx instead would pull that whole stack into the entry
+ * chunk.
  */
 export const PDF_FONT = 'PT Sans';
 
