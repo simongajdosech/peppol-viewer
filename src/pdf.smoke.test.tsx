@@ -84,6 +84,48 @@ describe('rendered PDF', () => {
     }
   });
 
+  it('decodes the code lists into the document', async () => {
+    const pages = await render(sample('base-example.xml'));
+    const text = squash(pages.join(' '));
+
+    expect(text).toContain(squash('380 - Commercial invoice')); // BT-3 type code
+    expect(text).toContain(squash('30 - Credit transfer')); // BT-81 payment means
+    expect(text).toContain(squash('S - Standard rate')); // BT-95 in the VAT breakdown
+    expect(text).toContain(squash('7 days')); // BT-130 unit DAY, label only
+  });
+
+  it('replaces the unit code rather than printing it alongside', async () => {
+    // Vat-category-S quotes its quantities in C62, which must not reach the page.
+    const text = squash((await render(sample('Vat-category-S.xml'))).join(' '));
+
+    expect(text).toContain(squash('10 pcs'));
+    expect(text).not.toContain('C62');
+  });
+
+  it('decodes them in Slovak too', async () => {
+    const pages = await render(sample('SK-full-example.xml'), 'sk');
+    const text = squash(pages.join(' '));
+
+    expect(text).toContain(squash('380 - Obchodná faktúra'));
+    expect(text).toContain(squash('30 - Prevodný príkaz')); // sender's own BT-82 name
+    expect(text).toContain(squash('S - Základná sadzba'));
+    expect(text).toContain(squash('12 hod.')); // HUR
+    expect(text).toContain(squash('3 ks')); // H87
+  });
+
+  it('keeps an unknown code rather than dropping it', async () => {
+    const invoice = sample('base-example.xml');
+    const odd = {
+      ...invoice,
+      typeCode: '999',
+      lines: invoice.lines.map((line) => ({ ...line, unitCode: 'ZZZ' })),
+    };
+    const text = squash((await render(odd)).join(' '));
+
+    expect(text).toContain('999');
+    expect(text).toContain('ZZZ');
+  });
+
   it('keeps Slovak diacritics, which the built-in PDF fonts would drop', async () => {
     const pages = await render(sample('SK-full-example.xml'), 'sk');
 

@@ -359,7 +359,7 @@ export function InvoiceDocument({
               <MetaRow label={t.period} value={period} />
               <MetaRow label={t.currency} value={invoice.currency} />
               <MetaRow label={t.taxCurrency} value={invoice.taxCurrency} />
-              <MetaRow label={t.typeCode} value={invoice.typeCode} />
+              <MetaRow label={t.typeCode} value={t.documentType(invoice.typeCode)} />
               <MetaRow label={t.buyerRef} value={invoice.buyerReference} />
               <MetaRow label={t.orderRef} value={invoice.orderReference} />
               <MetaRow label={t.salesOrderRef} value={invoice.salesOrderReference} />
@@ -414,13 +414,13 @@ export function InvoiceDocument({
               ))}
             </View>
             <Text style={styles.colQty}>
-              {join([t.quantity(line.quantity), line.unitCode], ' ')}
+              {join([t.quantity(line.quantity), t.unit(line.unitCode)], ' ')}
             </Text>
             <View style={styles.colPrice}>
               <Text>{money(line.unitPrice)}</Text>
               {line.baseQuantity !== 1 && (
                 <Text style={styles.detail}>
-                  {t.pricePer(t.quantity(line.baseQuantity), line.baseQuantityUnit)}
+                  {t.pricePer(t.quantity(line.baseQuantity), t.unit(line.baseQuantityUnit))}
                 </Text>
               )}
             </View>
@@ -446,7 +446,9 @@ export function InvoiceDocument({
               <TotalRow
                 key={`${tax.category}-${index}`}
                 label={t.vatOn(
-                  tax.category,
+                  // The narrow VAT column in the line table keeps the bare code; this
+                  // is the one place with room to say what that code means.
+                  t.vatCategory(tax.category),
                   tax.percent ? t.percent(tax.percent) : '',
                   money(tax.taxableAmount),
                 )}
@@ -476,7 +478,7 @@ export function InvoiceDocument({
             <Text style={styles.sectionTitle}>{t.vatExemption}</Text>
             {exemptions.map((tax, index) => (
               <Text key={index}>
-                {tax.category}: {join([tax.exemptionReason, tax.exemptionReasonCode], ' · ')}
+                {t.vatCategory(tax.category)}: {join([tax.exemptionReason, tax.exemptionReasonCode], ' · ')}
               </Text>
             ))}
           </View>
@@ -516,7 +518,7 @@ export function InvoiceDocument({
                 )}
                 {!!pm.code && (
                   <Text style={styles.muted}>
-                    {t.paymentMeansCode} {pm.name ? `${pm.name} (${pm.code})` : pm.code}
+                    {t.paymentMeansCode} {t.paymentMeans(pm.code, pm.name)}
                   </Text>
                 )}
               </View>

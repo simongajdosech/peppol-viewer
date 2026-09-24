@@ -141,7 +141,7 @@ split out with it. Verified in a browser against `npm run preview`: no console e
 and the network log shows the entry chunk and CSS first, then the preview chunk in
 parallel with the sample fetch, then fonts, worker, and the PDF blob.
 
-### 3.2 Decode the code lists - **priority: high**
+### 3.2 Decode the code lists - **priority: high** — **DONE**
 
 Everything is currently printed raw. Anyone who is not a Peppol implementer cannot read
 the output.
@@ -158,22 +158,37 @@ Payment     30 - Credit transfer
 Where the code is pure machine plumbing and the label is what a human wants, show the
 label alone - unit codes are the main case: `10 C62` reads better as `10 pcs`.
 
-- [ ] `src/codes.ts` with lookup tables keyed by code:
-  - **Unit codes** (UN/ECE Rec 20): `C62`, `HUR`, `KGM`, `MTR`, `LTR`, `DAY`, `MON`, ...
-    Label only. Fall back to the raw code when unknown.
-  - **Invoice / credit note type code** (UNTDID 1001): `380`, `381`, `384`, `389`, `326`.
-    `code - label`.
-  - **Payment means code** (UNTDID 4461): `30`, `31`, `42`, `48`, `58`, `59`, `68`, `97`.
-    `code - label`, but keep preferring the `@name` attribute when the sender supplied one
-    (already parsed as `PaymentMeans.name`).
-  - **VAT category code** (UNTDID 5305): `S`, `Z`, `E`, `AE`, `K`, `G`, `O`, `L`, `M`.
-    `code - label`; in the narrow VAT table column keep the bare code plus percentage as
-    today, and put the expansion in the VAT breakdown and exemption band where there is
-    room.
-  - **Country codes** already handled by `Intl.DisplayNames` in `i18n.ts` - leave as is.
-- [ ] Route the labels through `src/i18n.ts` so both `en` and `sk` are covered. Keep the
-      tables themselves language-neutral (code -> key) and the wording in the dictionaries.
-- [ ] Unknown code must always degrade to the raw code, never to an empty cell.
+- [x] `src/codes.ts` with lookup tables keyed by code:
+  - **Unit codes** (UN/ECE Rec 20/21), 27 entries covering countables, time, mass,
+    length/area/volume and energy. Label only. `C62`, `H87`, `EA` and `NAR` all map to
+    the same "pcs"/"ks" label — every sample uses them interchangeably for countables.
+  - **Document type code** (UNTDID 1001), 23 entries. `code - label`.
+  - **Payment means code** (UNTDID 4461), 13 entries. `code - label`, with the sender's
+    own BT-82 `@name` preferred over the code list when supplied.
+  - **VAT category code** (UNTDID 5305), all 9 EN 16931 allows. `code - label`.
+  - **Country codes** left to `Intl.DisplayNames` in `i18n.ts`, as planned.
+- [x] Wording routed through `src/i18n.ts` (`Strings.codes`, keyed by the semantic keys in
+      `codes.ts`) for both `en` and `sk`; the tables stay language-neutral.
+- [x] Unknown codes degrade to the raw code — `unit('ZZZ') === 'ZZZ'`,
+      `documentType('999') === '999'` — and an absent code stays empty rather than
+      printing a stray separator.
+
+**Where each one lands.** Type code in the details meta row; unit in the quantity column
+and in the "per N unit" price note; payment means in the payment band; VAT category in the
+totals VAT breakdown and in the exemption band. The narrow VAT column in the line table
+keeps the bare code plus percentage, as planned.
+
+**The width risk was measured, not eyeballed.** Every decoded string renders as a single
+text run with no wrapping, checked by pulling text item positions out of the rendered PDF
+for the worst cases. The longest is Slovak on the Norwegian sample —
+"DPH S - Základná sadzba 25 % zo základu 1 460,50 NOK" at 215pt inside the 294pt totals
+column, leaving ~39pt before the right-aligned amount.
+
+**Tests.** `src/codes.test.ts` asserts every table key has wording in both locales, that
+no dictionary entry is orphaned, that codes are stored exactly as the XML writes them, and
+the fallback behaviour per formatter. `pdf.smoke.test.tsx` gains assertions that the
+decoding actually reaches the rendered page in both locales, that a raw unit code never
+appears beside its label, and that an unknown code still prints.
 
 ### 3.3 Validation - **priority: high** (the feature that changes what the tool is)
 

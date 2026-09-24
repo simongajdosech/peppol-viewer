@@ -1,3 +1,9 @@
+import {
+  DOCUMENT_TYPE_CODES,
+  PAYMENT_MEANS_CODES,
+  UNIT_CODES,
+  VAT_CATEGORY_CODES,
+} from './codes';
 import type { Address } from './ubl';
 
 export type Locale = 'en' | 'sk';
@@ -98,6 +104,8 @@ export type Strings = {
   loadingDocument: string;
   pageCount: (n: number) => string;
   language: string;
+  // code list wording, keyed by the semantic keys in codes.ts
+  codes: Record<string, string>;
 };
 
 const en: Strings = {
@@ -180,6 +188,83 @@ const en: Strings = {
   loadingDocument: 'Loading document…',
   pageCount: (n) => `${n} page${n === 1 ? '' : 's'}`,
   language: 'Language',
+  codes: {
+    // units — the label stands alone, the code itself says nothing to a reader
+    unitPiece: 'pcs',
+    unitSet: 'sets',
+    unitPair: 'pairs',
+    unitBox: 'boxes',
+    unitPackage: 'packages',
+    unitSecond: 's',
+    unitMinute: 'min',
+    unitHour: 'h',
+    unitDay: 'days',
+    unitWeek: 'weeks',
+    unitMonth: 'months',
+    unitYear: 'years',
+    unitGram: 'g',
+    unitKilogram: 'kg',
+    unitTonne: 't',
+    unitMillimetre: 'mm',
+    unitCentimetre: 'cm',
+    unitMetre: 'm',
+    unitKilometre: 'km',
+    unitSquareMetre: 'm²',
+    unitCubicMetre: 'm³',
+    unitMillilitre: 'ml',
+    unitLitre: 'l',
+    unitKilowattHour: 'kWh',
+    unitMegawattHour: 'MWh',
+    unitPercent: '%',
+    // document types
+    typeRequestForPayment: 'Request for payment',
+    typeDebitNoteGoods: 'Debit note (goods)',
+    typeMeteredServices: 'Metered services invoice',
+    typeDebitNoteFinancial: 'Debit note (financial)',
+    typeTaxNotification: 'Tax notification',
+    typeFinalPayment: 'Final payment request',
+    typeProgressPayment: 'Progress payment request',
+    typePartialInvoice: 'Partial invoice',
+    typeCommercialInvoice: 'Commercial invoice',
+    typeCreditNote: 'Credit note',
+    typeCommissionNote: 'Commission note',
+    typeDebitNote: 'Debit note',
+    typeCorrectedInvoice: 'Corrected invoice',
+    typeConsolidatedInvoice: 'Consolidated invoice',
+    typePrepaymentInvoice: 'Prepayment invoice',
+    typeHireInvoice: 'Hire invoice',
+    typeTaxInvoice: 'Tax invoice',
+    typeSelfBilledInvoice: 'Self-billed invoice',
+    typeFactoredInvoice: 'Factored invoice',
+    typeConsignmentInvoice: 'Consignment invoice',
+    typePartialConstructionInvoice: 'Partial construction invoice',
+    typePartialFinalConstructionInvoice: 'Partial final construction invoice',
+    typeFinalConstructionInvoice: 'Final construction invoice',
+    // payment means
+    meansNotDefined: 'Not defined',
+    meansCash: 'Cash',
+    meansCheque: 'Cheque',
+    meansCreditTransfer: 'Credit transfer',
+    meansDebitTransfer: 'Debit transfer',
+    meansBankAccount: 'Payment to bank account',
+    meansBankCard: 'Bank card',
+    meansDirectDebit: 'Direct debit',
+    meansStandingAgreement: 'Standing agreement',
+    meansSepaCreditTransfer: 'SEPA credit transfer',
+    meansSepaDirectDebit: 'SEPA direct debit',
+    meansOnlinePayment: 'Online payment service',
+    meansClearing: 'Clearing between partners',
+    // VAT categories
+    vatStandard: 'Standard rate',
+    vatZeroRated: 'Zero rated',
+    vatExempt: 'Exempt from VAT',
+    vatReverseCharge: 'Reverse charge',
+    vatIntraCommunity: 'Intra-community supply',
+    vatExport: 'Export, VAT not charged',
+    vatOutOfScope: 'Outside the scope of VAT',
+    vatCanaryIslands: 'Canary Islands indirect tax',
+    vatCeutaMelilla: 'Ceuta and Melilla tax',
+  },
 };
 
 const sk: Strings = {
@@ -263,6 +348,83 @@ const sk: Strings = {
   loadingDocument: 'Načítavam doklad…',
   pageCount: (n) => `${n} ${n === 1 ? 'strana' : n < 5 ? 'strany' : 'strán'}`,
   language: 'Jazyk',
+  codes: {
+    // units — the label stands alone, the code itself says nothing to a reader
+    unitPiece: 'ks',
+    unitSet: 'súprav',
+    unitPair: 'párov',
+    unitBox: 'krabíc',
+    unitPackage: 'balení',
+    unitSecond: 's',
+    unitMinute: 'min',
+    unitHour: 'hod.',
+    unitDay: 'dní',
+    unitWeek: 'týždňov',
+    unitMonth: 'mesiacov',
+    unitYear: 'rokov',
+    unitGram: 'g',
+    unitKilogram: 'kg',
+    unitTonne: 't',
+    unitMillimetre: 'mm',
+    unitCentimetre: 'cm',
+    unitMetre: 'm',
+    unitKilometre: 'km',
+    unitSquareMetre: 'm²',
+    unitCubicMetre: 'm³',
+    unitMillilitre: 'ml',
+    unitLitre: 'l',
+    unitKilowattHour: 'kWh',
+    unitMegawattHour: 'MWh',
+    unitPercent: '%',
+    // document types
+    typeRequestForPayment: 'Žiadosť o platbu',
+    typeDebitNoteGoods: 'Ťarchopis za tovar',
+    typeMeteredServices: 'Faktúra za meranú spotrebu',
+    typeDebitNoteFinancial: 'Finančný ťarchopis',
+    typeTaxNotification: 'Daňové oznámenie',
+    typeFinalPayment: 'Konečná žiadosť o platbu',
+    typeProgressPayment: 'Priebežná žiadosť o platbu',
+    typePartialInvoice: 'Čiastková faktúra',
+    typeCommercialInvoice: 'Obchodná faktúra',
+    typeCreditNote: 'Dobropis',
+    typeCommissionNote: 'Provízna faktúra',
+    typeDebitNote: 'Ťarchopis',
+    typeCorrectedInvoice: 'Opravná faktúra',
+    typeConsolidatedInvoice: 'Súhrnná faktúra',
+    typePrepaymentInvoice: 'Zálohová faktúra',
+    typeHireInvoice: 'Faktúra za prenájom',
+    typeTaxInvoice: 'Daňový doklad',
+    typeSelfBilledInvoice: 'Samofakturácia',
+    typeFactoredInvoice: 'Faktoringová faktúra',
+    typeConsignmentInvoice: 'Konsignačná faktúra',
+    typePartialConstructionInvoice: 'Čiastková stavebná faktúra',
+    typePartialFinalConstructionInvoice: 'Čiastková konečná stavebná faktúra',
+    typeFinalConstructionInvoice: 'Konečná stavebná faktúra',
+    // payment means
+    meansNotDefined: 'Neurčené',
+    meansCash: 'Hotovosť',
+    meansCheque: 'Šek',
+    meansCreditTransfer: 'Prevodný príkaz',
+    meansDebitTransfer: 'Inkasný prevod',
+    meansBankAccount: 'Úhrada na bankový účet',
+    meansBankCard: 'Platobná karta',
+    meansDirectDebit: 'Inkaso',
+    meansStandingAgreement: 'Trvalá dohoda',
+    meansSepaCreditTransfer: 'SEPA prevod',
+    meansSepaDirectDebit: 'SEPA inkaso',
+    meansOnlinePayment: 'Online platba',
+    meansClearing: 'Zápočet medzi partnermi',
+    // VAT categories
+    vatStandard: 'Základná sadzba',
+    vatZeroRated: 'Nulová sadzba',
+    vatExempt: 'Oslobodené od DPH',
+    vatReverseCharge: 'Prenesenie daňovej povinnosti',
+    vatIntraCommunity: 'Dodanie do EÚ',
+    vatExport: 'Vývoz, DPH sa neúčtuje',
+    vatOutOfScope: 'Mimo rozsahu DPH',
+    vatCanaryIslands: 'Nepriama daň Kanárskych ostrovov',
+    vatCeutaMelilla: 'Daň Ceuty a Melilly',
+  },
 };
 
 const DICT: Record<Locale, Strings> = { en, sk };
@@ -276,6 +438,14 @@ export type Formatters = {
   date: (iso: string) => string;
   country: (code: string) => string;
   address: (address: Address) => string[];
+  /** BT-130 unit: the label alone — "C62" tells a reader nothing, "pcs" does. */
+  unit: (code: string) => string;
+  /** BT-3 document type, as "380 - Commercial invoice". */
+  documentType: (code: string) => string;
+  /** BT-81 payment means; the sender's own BT-82 name wins over the code list. */
+  paymentMeans: (code: string, name: string) => string;
+  /** BT-95 VAT category, as "S - Standard rate". */
+  vatCategory: (code: string) => string;
 };
 
 export type Translation = Strings & Formatters;
@@ -324,5 +494,39 @@ export function translation(locale: Locale): Translation {
     return [...addr.lines, locality, addr.subentity, country(addr.country)].filter(Boolean);
   };
 
-  return { ...DICT[locale], money, quantity, percent, date, country, address };
+  const strings = DICT[locale];
+
+  /** The wording for a code, or '' when this code list does not cover it. */
+  const label = (table: Record<string, string>, code: string) =>
+    (code && strings.codes[table[code]]) || '';
+
+  // An unknown code always survives as itself — a document must not lose what it said
+  // just because a list here is incomplete.
+  const unit = (code: string) => label(UNIT_CODES, code) || code;
+
+  /** "380 - Commercial invoice", keeping the code the sender actually wrote. */
+  const withCode = (table: Record<string, string>, code: string, name = '') => {
+    const text = name || label(table, code);
+    if (!code) return text;
+    return text ? `${code} - ${text}` : code;
+  };
+
+  const documentType = (code: string) => withCode(DOCUMENT_TYPE_CODES, code);
+  const paymentMeans = (code: string, name: string) =>
+    withCode(PAYMENT_MEANS_CODES, code, name);
+  const vatCategory = (code: string) => withCode(VAT_CATEGORY_CODES, code);
+
+  return {
+    ...strings,
+    money,
+    quantity,
+    percent,
+    date,
+    country,
+    address,
+    unit,
+    documentType,
+    paymentMeans,
+    vatCategory,
+  };
 }
