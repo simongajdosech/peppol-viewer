@@ -15,22 +15,38 @@ export type Strings = {
   // document
   invoice: string;
   creditNote: string;
+  documentNo: string;
   supplier: string;
   billTo: string;
   creditTo: string;
+  payee: string;
+  taxRepresentative: string;
+  deliverTo: string;
   details: string;
   issued: string;
   due: string;
   delivered: string;
+  taxPoint: string;
   period: string;
   currency: string;
+  taxCurrency: string;
   typeCode: string;
   buyerRef: string;
   orderRef: string;
+  salesOrderRef: string;
   contract: string;
+  project: string;
+  despatchAdvice: string;
+  receiptAdvice: string;
+  originatorRef: string;
+  precedingInvoice: string;
   costCentre: string;
   companyId: string;
   vatId: string;
+  taxRegistration: string;
+  legalForm: string;
+  partyId: string;
+  locationId: string;
   // table
   colNo: string;
   colItem: string;
@@ -38,6 +54,14 @@ export type Strings = {
   colPrice: string;
   colVat: string;
   colAmount: string;
+  // line detail labels
+  itemSellerId: string;
+  itemStandardId: string;
+  itemClassification: string;
+  itemOrigin: string;
+  lineOrderRef: string;
+  lineObjectRef: string;
+  grossPrice: string;
   // totals
   sumOfLines: string;
   allowance: string;
@@ -51,11 +75,19 @@ export type Strings = {
   vatExemption: string;
   payment: string;
   account: string;
+  card: string;
+  directDebit: string;
+  mandate: string;
+  debitedAccount: string;
+  paymentMeansCode: string;
   paymentReference: string;
   notes: string;
+  attachments: string;
+  embedded: string;
   // functions
   vatOn: (category: string, percent: string, base: string) => string;
-  page: (current: number, total: number) => string;
+  vatIn: (currency: string) => string;
+  pricePer: (quantity: string, unit: string) => string;
   // app chrome
   appTagline: string;
   openOwnFile: string;
@@ -71,28 +103,51 @@ export type Strings = {
 const en: Strings = {
   invoice: 'Invoice',
   creditNote: 'Credit Note',
+  documentNo: 'No.',
   supplier: 'Supplier',
   billTo: 'Bill to',
   creditTo: 'Credit to',
+  payee: 'Payee',
+  taxRepresentative: 'Tax representative',
+  deliverTo: 'Deliver to',
   details: 'Details',
   issued: 'Issued',
   due: 'Due',
   delivered: 'Delivered',
+  taxPoint: 'Tax point',
   period: 'Period',
   currency: 'Currency',
+  taxCurrency: 'VAT currency',
   typeCode: 'Type code',
   buyerRef: 'Buyer ref.',
   orderRef: 'Order ref.',
+  salesOrderRef: 'Sales order',
   contract: 'Contract',
+  project: 'Project',
+  despatchAdvice: 'Despatch advice',
+  receiptAdvice: 'Receipt advice',
+  originatorRef: 'Originator ref.',
+  precedingInvoice: 'Corrects invoice',
   costCentre: 'Cost centre',
   companyId: 'Company ID',
   vatId: 'VAT',
+  taxRegistration: 'Tax reg.',
+  legalForm: 'Legal form',
+  partyId: 'ID',
+  locationId: 'Location',
   colNo: '#',
   colItem: 'Description',
   colQty: 'Qty',
   colPrice: 'Unit price',
   colVat: 'VAT',
   colAmount: 'Amount',
+  itemSellerId: "Seller's item no.",
+  itemStandardId: 'Item no.',
+  itemClassification: 'Classification',
+  itemOrigin: 'Origin',
+  lineOrderRef: 'Order line',
+  lineObjectRef: 'Object ref.',
+  grossPrice: 'Gross',
   sumOfLines: 'Sum of line amounts',
   allowance: 'Allowance',
   charge: 'Charge',
@@ -104,10 +159,18 @@ const en: Strings = {
   vatExemption: 'VAT exemption',
   payment: 'Payment',
   account: 'Account',
+  card: 'Card',
+  directDebit: 'Direct debit',
+  mandate: 'Mandate',
+  debitedAccount: 'Debited account',
+  paymentMeansCode: 'Payment means',
   paymentReference: 'Reference',
   notes: 'Notes',
+  attachments: 'Attachments & references',
+  embedded: 'embedded',
   vatOn: (category, percent, base) => `VAT ${category}${percent ? ` ${percent}` : ''} on ${base}`,
-  page: (current, total) => `Page ${current} of ${total}`,
+  vatIn: (currency) => `VAT total in ${currency}`,
+  pricePer: (quantity, unit) => `per ${quantity}${unit ? ` ${unit}` : ''}`,
   appTagline: 'UBL / Peppol BIS Billing 3.0 → printable document',
   openOwnFile: 'Open your own XML…',
   showXml: 'Show XML',
@@ -122,28 +185,51 @@ const en: Strings = {
 const sk: Strings = {
   invoice: 'Faktúra',
   creditNote: 'Dobropis',
+  documentNo: 'Číslo',
   supplier: 'Dodávateľ',
   billTo: 'Odberateľ',
   creditTo: 'Odberateľ',
+  payee: 'Príjemca platby',
+  taxRepresentative: 'Daňový zástupca',
+  deliverTo: 'Miesto dodania',
   details: 'Údaje o doklade',
   issued: 'Dátum vystavenia',
   due: 'Dátum splatnosti',
   delivered: 'Dátum dodania',
+  taxPoint: 'Dátum daňovej povinnosti',
   period: 'Fakturované obdobie',
   currency: 'Mena',
+  taxCurrency: 'Mena DPH',
   typeCode: 'Kód typu',
   buyerRef: 'Referencia odberateľa',
   orderRef: 'Objednávka',
+  salesOrderRef: 'Predajná objednávka',
   contract: 'Zmluva',
+  project: 'Projekt',
+  despatchAdvice: 'Dodací list',
+  receiptAdvice: 'Príjemka',
+  originatorRef: 'Referencia zadávateľa',
+  precedingInvoice: 'Opravovaná faktúra',
   costCentre: 'Nákladové stredisko',
   companyId: 'IČO',
   vatId: 'IČ DPH',
+  taxRegistration: 'Daňová registrácia',
+  legalForm: 'Právna forma',
+  partyId: 'Identifikátor',
+  locationId: 'Miesto',
   colNo: 'Č.',
   colItem: 'Popis',
   colQty: 'Množstvo',
   colPrice: 'Jedn. cena',
   colVat: 'DPH',
   colAmount: 'Suma',
+  itemSellerId: 'Kód dodávateľa',
+  itemStandardId: 'Štandardný kód',
+  itemClassification: 'Klasifikácia',
+  itemOrigin: 'Krajina pôvodu',
+  lineOrderRef: 'Riadok objednávky',
+  lineObjectRef: 'Referencia objektu',
+  grossPrice: 'Cenníková cena',
   sumOfLines: 'Súčet riadkov',
   allowance: 'Zľava',
   charge: 'Príplatok',
@@ -155,11 +241,19 @@ const sk: Strings = {
   vatExemption: 'Oslobodenie od DPH',
   payment: 'Platobné údaje',
   account: 'Účet',
+  card: 'Karta',
+  directDebit: 'Inkaso',
+  mandate: 'Mandát',
+  debitedAccount: 'Zaťažovaný účet',
+  paymentMeansCode: 'Spôsob úhrady',
   paymentReference: 'Variabilný symbol',
   notes: 'Poznámky',
+  attachments: 'Prílohy a odkazy',
+  embedded: 'vložená príloha',
   vatOn: (category, percent, base) =>
     `DPH ${category}${percent ? ` ${percent}` : ''} zo základu ${base}`,
-  page: (current, total) => `Strana ${current} z ${total}`,
+  vatIn: (currency) => `DPH celkom v ${currency}`,
+  pricePer: (quantity, unit) => `za ${quantity}${unit ? ` ${unit}` : ''}`,
   appTagline: 'UBL / Peppol BIS Billing 3.0 → tlačový doklad',
   openOwnFile: 'Otvoriť vlastné XML…',
   showXml: 'Zobraziť XML',
@@ -180,6 +274,7 @@ export type Formatters = {
   quantity: (value: number) => string;
   percent: (value: number) => string;
   date: (iso: string) => string;
+  country: (code: string) => string;
   address: (address: Address) => string[];
 };
 
@@ -214,19 +309,20 @@ export function translation(locale: Locale): Translation {
     return new Intl.DateTimeFormat(tag, { dateStyle: 'medium', timeZone: 'UTC' }).format(parsed);
   };
 
-  const address = (addr: Address) => {
-    const locality = [addr.postalZone, addr.city].filter(Boolean).join(' ');
-    // ISO country codes read better spelled out in the reader's language.
-    let country = addr.country;
-    if (country.length === 2) {
-      try {
-        country = regions.of(country.toUpperCase()) ?? country;
-      } catch {
-        /* unknown region code: keep the raw value */
-      }
+  // ISO country codes read better spelled out in the reader's language.
+  const country = (code: string) => {
+    if (code.length !== 2) return code;
+    try {
+      return regions.of(code.toUpperCase()) ?? code;
+    } catch {
+      return code; /* unknown region code: keep the raw value */
     }
-    return [...addr.lines, locality, addr.subentity, country].filter(Boolean);
   };
 
-  return { ...DICT[locale], money, quantity, percent, date, address };
+  const address = (addr: Address) => {
+    const locality = [addr.postalZone, addr.city].filter(Boolean).join(' ');
+    return [...addr.lines, locality, addr.subentity, country(addr.country)].filter(Boolean);
+  };
+
+  return { ...DICT[locale], money, quantity, percent, date, country, address };
 }
