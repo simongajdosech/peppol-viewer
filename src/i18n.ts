@@ -106,6 +106,15 @@ export type Strings = {
   language: string;
   // code list wording, keyed by the semantic keys in codes.ts
   codes: Record<string, string>;
+  // business rule wording, keyed by Finding.key in validate.ts
+  rules: Record<string, string>;
+  // validation panel
+  checks: string;
+  checksPassed: string;
+  checksFailed: (errors: number) => string;
+  checksAdvisory: (warnings: number) => string;
+  ruleExpected: string;
+  ruleStated: string;
 };
 
 const en: Strings = {
@@ -265,6 +274,53 @@ const en: Strings = {
     vatCanaryIslands: 'Canary Islands indirect tax',
     vatCeutaMelilla: 'Ceuta and Melilla tax',
   },
+  rules: {
+    // totals
+    sumOfLines: 'The line amounts do not add up to the stated sum of lines',
+    allowanceTotal: 'The document allowances do not add up to the stated allowance total',
+    chargeTotal: 'The document charges do not add up to the stated charge total',
+    taxExclusiveTotal: 'Sum of lines less allowances plus charges is not the total excl. VAT',
+    vatTotal: 'The VAT breakdown does not add up to the stated VAT total',
+    taxInclusiveTotal: 'Total excl. VAT plus VAT is not the stated total incl. VAT',
+    payableTotal: 'Total incl. VAT less prepaid plus rounding is not the amount due',
+    // VAT breakdown
+    vatCalculation: 'The rate applied to the taxable amount does not give the stated VAT',
+    vatRateNotZero: 'A category that charges no VAT must state a rate of zero',
+    vatRateZero: 'Standard rated VAT must state a rate above zero',
+    vatExemptionReason: 'A category that charges no VAT must give an exemption reason',
+    vatBreakdownMissingCategory: 'This category is used in the document but has no VAT breakdown',
+    missingVatBreakdown: 'The document has no VAT breakdown at all',
+    // required fields
+    missingCustomizationId: 'The specification identifier is missing',
+    missingId: 'The document number is missing',
+    missingIssueDate: 'The issue date is missing',
+    missingTypeCode: 'The document type code is missing',
+    missingCurrency: 'The document currency is missing',
+    missingSellerName: "The seller's name is missing",
+    missingBuyerName: "The buyer's name is missing",
+    missingSellerAddress: "The seller's postal address is missing",
+    missingSellerCountry: "The seller's country code is missing",
+    missingBuyerAddress: "The buyer's postal address is missing",
+    missingBuyerCountry: "The buyer's country code is missing",
+    missingLines: 'The document has no lines',
+    missingSellerEndpointScheme: "The seller's electronic address has no scheme identifier",
+    missingBuyerEndpointScheme: "The buyer's electronic address has no scheme identifier",
+    // code lists
+    invalidCurrency: 'The document currency is not an ISO 4217 code',
+    invalidTaxCurrency: 'The VAT accounting currency is not an ISO 4217 code',
+    // payment
+    missingPaymentTerms: 'An amount is payable but there is no due date and no payment terms',
+    missingAccount: 'A credit transfer names no account to pay into',
+    // advisory
+    dueBeforeIssue: 'The due date falls before the issue date',
+    noPaymentMeans: 'An amount is payable but the document names no payment means',
+  },
+  checks: 'Checks',
+  checksPassed: 'All checks passed',
+  checksFailed: (errors) => `${errors} rule${errors === 1 ? '' : 's'} broken`,
+  checksAdvisory: (warnings) => `${warnings} to look at`,
+  ruleExpected: 'expected',
+  ruleStated: 'document states',
 };
 
 const sk: Strings = {
@@ -425,6 +481,54 @@ const sk: Strings = {
     vatCanaryIslands: 'Nepriama daň Kanárskych ostrovov',
     vatCeutaMelilla: 'Daň Ceuty a Melilly',
   },
+  rules: {
+    // totals
+    sumOfLines: 'Súčet súm riadkov nezodpovedá uvedenému súčtu riadkov',
+    allowanceTotal: 'Zľavy na doklade nezodpovedajú uvedenému súčtu zliav',
+    chargeTotal: 'Príplatky na doklade nezodpovedajú uvedenému súčtu príplatkov',
+    taxExclusiveTotal: 'Súčet riadkov mínus zľavy plus príplatky nedáva základ dane',
+    vatTotal: 'Rozpis DPH nezodpovedá uvedenej celkovej DPH',
+    taxInclusiveTotal: 'Základ dane plus DPH nedáva uvedenú sumu s DPH',
+    payableTotal: 'Suma s DPH mínus uhradené vopred plus zaokrúhlenie nedáva sumu na úhradu',
+    // VAT breakdown
+    vatCalculation: 'Sadzba použitá na základ dane nedáva uvedenú DPH',
+    vatRateNotZero: 'Kategória bez DPH musí mať nulovú sadzbu',
+    vatRateZero: 'Základná sadzba DPH musí byť vyššia ako nula',
+    vatExemptionReason: 'Kategória bez DPH musí uviesť dôvod oslobodenia',
+    vatBreakdownMissingCategory: 'Táto kategória je v doklade použitá, ale chýba v rozpise DPH',
+    missingVatBreakdown: 'Doklad neobsahuje žiadny rozpis DPH',
+    // required fields
+    missingCustomizationId: 'Chýba identifikátor špecifikácie',
+    missingId: 'Chýba číslo dokladu',
+    missingIssueDate: 'Chýba dátum vystavenia',
+    missingTypeCode: 'Chýba kód typu dokladu',
+    missingCurrency: 'Chýba mena dokladu',
+    missingSellerName: 'Chýba názov dodávateľa',
+    missingBuyerName: 'Chýba názov odberateľa',
+    missingSellerAddress: 'Chýba poštová adresa dodávateľa',
+    missingSellerCountry: 'Chýba kód krajiny dodávateľa',
+    missingBuyerAddress: 'Chýba poštová adresa odberateľa',
+    missingBuyerCountry: 'Chýba kód krajiny odberateľa',
+    missingLines: 'Doklad neobsahuje žiadne riadky',
+    missingSellerEndpointScheme: 'Elektronická adresa dodávateľa nemá identifikátor schémy',
+    missingBuyerEndpointScheme: 'Elektronická adresa odberateľa nemá identifikátor schémy',
+    // code lists
+    invalidCurrency: 'Mena dokladu nie je kód podľa ISO 4217',
+    invalidTaxCurrency: 'Mena DPH nie je kód podľa ISO 4217',
+    // payment
+    missingPaymentTerms: 'Suma je splatná, ale chýba dátum splatnosti aj platobné podmienky',
+    missingAccount: 'Prevodný príkaz neuvádza účet na úhradu',
+    // advisory
+    dueBeforeIssue: 'Dátum splatnosti je skôr ako dátum vystavenia',
+    noPaymentMeans: 'Suma je splatná, ale doklad neuvádza spôsob úhrady',
+  },
+  checks: 'Kontroly',
+  checksPassed: 'Všetky kontroly prešli',
+  checksFailed: (errors) =>
+    `${errors} ${errors === 1 ? 'porušené pravidlo' : errors < 5 ? 'porušené pravidlá' : 'porušených pravidiel'}`,
+  checksAdvisory: (warnings) => `${warnings} na pozretie`,
+  ruleExpected: 'očakávané',
+  ruleStated: 'doklad uvádza',
 };
 
 const DICT: Record<Locale, Strings> = { en, sk };

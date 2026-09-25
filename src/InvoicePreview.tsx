@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePDF } from '@react-pdf/renderer';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { InvoiceDocument } from './InvoiceDocument';
+import { ValidationBadge } from './Validation';
 import { registerPdfFonts } from './fonts';
+import { validate } from './validate';
 import type { Locale, Translation } from './i18n';
 import type { UblDocument } from './ubl';
 
@@ -43,6 +45,9 @@ export function InvoicePreview({
   const [pageCount, setPageCount] = useState(0);
   const [zoomIndex, setZoomIndex] = useState(3);
 
+  // Pure and cheap, but the document only changes when a new file is loaded.
+  const findings = useMemo(() => validate(invoice), [invoice]);
+
   useEffect(() => {
     update(<InvoiceDocument invoice={invoice} locale={locale} />);
   }, [invoice, locale, update]);
@@ -80,6 +85,8 @@ export function InvoicePreview({
         <span className="status">
           {instance.loading ? t.rendering : pageCount > 0 ? t.pageCount(pageCount) : ''}
         </span>
+
+        <ValidationBadge findings={findings} currency={invoice.currency} t={t} />
 
         {instance.url && !instance.loading ? (
           <a className="download" href={instance.url} download={filename}>

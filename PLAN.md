@@ -190,28 +190,55 @@ the fallback behaviour per formatter. `pdf.smoke.test.tsx` gains assertions that
 decoding actually reaches the rendered page in both locales, that a raw unit code never
 appears beside its label, and that an unknown code still prints.
 
-### 3.3 Validation - **priority: high** (the feature that changes what the tool is)
+### 3.3 Validation - **priority: high** — **DONE**
 
-A viewer that cannot say whether the document is *correct* is doing half the job. Two
-tiers; ship the first one alone if needed.
+A viewer that cannot say whether the document is *correct* was doing half the job.
 
-- [ ] **Tier 1 - arithmetic (no dependencies, ~50 lines).** Every number is already
-      parsed. Check, with a tolerance of half the currency's smallest unit:
-  - sum of `Line.amount` == `totals.lineExtension` (BR-CO-10)
-  - `lineExtension - allowanceTotal + chargeTotal` == `totals.taxExclusive` (BR-CO-13)
-  - sum of `TaxSubtotal.taxAmount` == `totals.taxAmount` (BR-CO-14)
-  - `taxExclusive + taxAmount` == `taxInclusive` (BR-CO-15)
-  - each subtotal's `taxableAmount x percent` == its `taxAmount` (BR-S-08 and friends)
-  - `taxInclusive - prepaid + rounding` == `payable` (BR-CO-16)
-- [ ] **Tier 2 - cardinality and code lists.** Required fields present; category `E`
-      requires an exemption reason or code; `AE` requires reverse-charge payment terms;
-      `EndpointID/@schemeID` is a real EAS code; currency codes are ISO 4217.
-- [ ] **Surfacing:** a pass/fail badge in the preview toolbar with a detail panel listing
-      each failed rule, the expected value and the found value. Consider an optional band
-      on the PDF itself, off by default - the printed document should not shout at the
-      reader unless asked.
-- [ ] Put the rules in their own module with their own tests; they are pure functions over
-      `UblDocument` and every sample should pass tier 1.
+- [x] **Tier 1 - arithmetic.** All of the listed checks, plus BR-CO-11 and BR-CO-12
+      (the document allowance and charge totals against the allowances and charges
+      themselves) — the same shape, and the data was already parsed.
+- [x] **Tier 2 - cardinality and code lists.** BR-01 … BR-11, BR-16, BR-CO-18, BR-62/63,
+      BR-CL-04/05, BR-CO-25, BR-50, and the per-category rules BR-x-01/05/08/10 for
+      S, Z, E, AE, K (as `BR-IC`), G and O.
+- [x] **Surfacing:** a pass/fail badge in the preview toolbar; clicking it opens a panel
+      listing every finding with its rule id, a plain description, the VAT row it concerns,
+      and the expected value against what the document states. Green when clean, amber
+      when only advisory findings remain, red when a rule is broken.
+- [x] Rules live in `src/validate.ts`, pure over `UblDocument` and free of locale: a
+      finding carries the rule id and the numbers, `i18n.ts` supplies the wording in both
+      languages. All eight conformant samples raise nothing.
+
+**Two tolerances, not one.** Totals use half a cent (0.005), as planned. The per-row VAT
+calculation uses 0.02, because it is computed from amounts that were each already rounded,
+so the error accumulates past a single rounding step. Both are pinned by tests that check
+the boundary from both sides.
+
+**Three deliberate departures from the plan text:**
+
+1. *"`AE` requires reverse-charge payment terms"* was wrong. EN 16931 BR-AE-10 requires an
+   exemption reason code or text, the same shape as BR-E-10. Implemented as the standard
+   actually states it.
+2. *"`EndpointID/@schemeID` is a real EAS code"* is **not** implemented as a membership
+   test. The EAS list gains entries over time, so a stale copy would reject valid
+   documents — a false error is worse than a missing check here. BR-62/BR-63 (an
+   electronic address that is present must be qualified by a scheme) is checked instead.
+3. The **optional band on the PDF was not built**. The plan only said "consider" it, and
+   its own reasoning argues against: the PDF is the document you send someone, and
+   validation belongs to the tool inspecting it, not to the artefact. Worth revisiting
+   only if someone wants a printable conformance report, which is a different feature.
+
+`Intl.NumberFormat` turned out to be useless for ISO 4217 validation — it accepts any
+three letters, "XYZ" included. `Intl.DisplayNames` with `fallback: 'none'` does real CLDR
+membership and is what the currency rules use.
+
+**A ninth sample, `broken-example.xml`,** ships alongside the conformant ones. It breaks
+six rules and raises one warning, so the feature is visible without hunting for a bad
+document, and a test pins exactly what it should report.
+
+**Possible follow-up:** the badge lives in the preview toolbar, as planned, which means it
+is not visible in the XML view. Since `validate()` is pure and cheap and sits outside the
+lazily loaded PDF chunk, moving it to the app header would make it available in both
+views.
 
 ### 3.4 Payment QR code - **priority: medium-high**
 

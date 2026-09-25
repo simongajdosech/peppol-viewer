@@ -14,4 +14,5 @@ export const SAMPLES: Sample[] = [
   { file: 'Norwegian-example-1.xml', label: 'Norwegian invoice', note: 'Multi-page, mixed VAT, prepaid + rounding' },
   { file: 'SK-full-example.xml', label: 'Slovenská faktúra', note: 'SK diacritics, 23 % + 5 % DPH, IBAN, prepaid' },
   { file: 'SK-validation-example.xml', label: 'SK validation stub', note: 'Minimal SK sample from epostak.sk' },
+  { file: 'broken-example.xml', label: 'Non-conformant invoice', note: 'Deliberately breaks several EN 16931 rules' },
 ];

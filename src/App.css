@@ -154,6 +154,108 @@ main {
   pointer-events: none;
 }
 
+/* validation */
+
+.validation {
+  position: relative;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+button.badge {
+  cursor: pointer;
+}
+
+.badge.pass {
+  color: #2f9e5e;
+  border-color: rgba(47, 158, 94, 0.4);
+  background: rgba(47, 158, 94, 0.12);
+}
+
+.badge.warn {
+  color: #b7791f;
+  border-color: rgba(183, 121, 31, 0.4);
+  background: rgba(183, 121, 31, 0.12);
+}
+
+.badge.fail {
+  color: #e5484d;
+  border-color: rgba(229, 72, 77, 0.4);
+  background: rgba(229, 72, 77, 0.12);
+}
+
+/* The panel hangs off the badge so opening it does not push the page around. */
+.findings {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: min(34rem, 80vw);
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.findings li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.15rem 0.6rem;
+  padding: 0.5rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.findings li + li {
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+}
+
+.findings .rule-id {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.findings li.error .rule-id {
+  color: #e5484d;
+}
+
+.findings li.warning .rule-id {
+  color: #b7791f;
+}
+
+.findings .rule-text {
+  color: var(--text-h);
+}
+
+.findings .rule-text em {
+  font-style: normal;
+  opacity: 0.65;
+}
+
+.findings .rule-numbers {
+  grid-column: 2;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
 .paper-scroll {
   overflow-x: auto;
   padding: 1.25rem;
