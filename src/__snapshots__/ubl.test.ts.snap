@@ -5,6 +5,7 @@ exports[`sample documents > parses Allowance-example.xml 1`] = `
   "accountingCost": "4025:123:4343",
   "additionalDocuments": [
     {
+      "attachmentContent": "",
       "attachmentFilename": "",
       "attachmentMime": "",
       "description": "",
@@ -14,6 +15,7 @@ exports[`sample documents > parses Allowance-example.xml 1`] = `
       "uri": "",
     },
     {
+      "attachmentContent": "",
       "attachmentFilename": "",
       "attachmentMime": "",
       "description": "Technical specification",
@@ -341,6 +343,7 @@ exports[`sample documents > parses Norwegian-example-1.xml 1`] = `
   "accountingCost": "Project cost code 123",
   "additionalDocuments": [
     {
+      "attachmentContent": "",
       "attachmentFilename": "",
       "attachmentMime": "",
       "description": "Timesheet",
@@ -350,6 +353,7 @@ exports[`sample documents > parses Norwegian-example-1.xml 1`] = `
       "uri": "http://www.suppliersite.eu/sheet001.html",
     },
     {
+      "attachmentContent": "VGVzdCBiYXNlIDY0IGVuY29kaW5n",
       "attachmentFilename": "Hours-spent.csv",
       "attachmentMime": "application/pdf",
       "description": "EHF specification",

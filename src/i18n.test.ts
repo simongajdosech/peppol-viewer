@@ -180,3 +180,23 @@ describe('dictionaries', () => {
     }
   });
 });
+
+describe('bytes', () => {
+  it('scales into kB and MB so a size reads at a glance', () => {
+    expect(en.bytes(21)).toBe('21 B');
+    expect(en.bytes(999)).toBe('999 B');
+    expect(en.bytes(1000)).toBe('1.0 kB');
+    expect(en.bytes(45_600)).toBe('45.6 kB');
+    expect(en.bytes(1_000_000)).toBe('1.0 MB');
+    expect(en.bytes(2_400_000)).toBe('2.4 MB');
+  });
+
+  it(`formats the number in the reader's language, keeping the SI unit`, () => {
+    expect(spaces(sk.bytes(45_600))).toBe('45,6 kB');
+    expect(sk.bytes(21)).toBe('21 B');
+  });
+
+  it('is zero for an attachment that is not there', () => {
+    expect(en.bytes(0)).toBe('0 B');
+  });
+});

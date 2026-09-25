@@ -102,6 +102,49 @@ main {
   cursor: pointer;
 }
 
+/* embedded attachments */
+
+.attachments {
+  margin-bottom: 1rem;
+}
+
+.attachments h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.attachments ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.attachments button {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.attachments button strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.attachments button span {
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
 /* preview */
 
 .toolbar {

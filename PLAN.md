@@ -320,15 +320,55 @@ The three "nothing" rows are worth keeping as they are — each one exercises a 
 reason for withholding a code. `isIban` still has the old placeholder strings pinned as
 rejections, so the check itself is not weakened by the samples having improved.
 
-### 3.5 Embedded attachments - **priority: medium**
+### 3.5 Embedded attachments - **priority: medium** — **DONE**
 
-`src/ubl.ts:464` keeps an attachment's `filename` and `mimeCode` but throws away the
-base64 body in `EmbeddedDocumentBinaryObject`. Attachments are often where the real detail
-sits.
+The parser kept an attachment's `filename` and `mimeCode` but threw away the base64 body
+in `EmbeddedDocumentBinaryObject`. Attachments are often where the real detail sits.
 
-- [ ] Parse the base64 content into the `DocumentReference` model.
-- [ ] Offer it as a download in the app UI (not in the PDF) next to the attachment entry.
-- [ ] Guard the size - a large embedded PDF should not be held in state twice.
+- [x] `DocumentReference.attachmentContent` holds BT-125, **still base64**. See the size
+      note below — that is the answer to "not held in state twice", not an omission.
+- [x] A strip of download buttons in the app shell (`src/AttachmentList.tsx`), one per
+      embedded file, showing its name, media type and size. Nothing was added to the PDF:
+      a printed page cannot hand anyone a file.
+- [x] `src/attachments.ts` holds the logic, pure and testable: the media-type allowlist,
+      filename cleaning, the size arithmetic, the decode, and the save.
+
+**Where it lives, and why not in the preview.** The strip sits in `App`, above both
+views, rather than in `InvoicePreview`. It is visible in the XML view — which is exactly
+where someone inspecting a document wants the file that came with it — and it stays out
+of the lazily loaded PDF chunk. (Same argument as the follow-up note under 3.3 about
+moving the validation badge to the header; that one is still open.)
+
+**The size guard is "never decode until asked".** The base64 stays as the XML wrote it
+and is decoded inside the click handler; the `Blob` and its object URL are created there
+and the URL is revoked on the next tick, so no decoded copy outlives the save. Decoding
+at parse time would have held every embedded file twice — once encoded, once not — for
+as long as the document was open. The size shown beside each name is computed from the
+base64 length (`attachmentBytes`), so even displaying it decodes nothing.
+
+**Two things the sender controls, so neither is trusted.**
+
+1. **`mimeCode`** is checked against the six media types BIS Billing 3.0 permits;
+   anything else becomes `application/octet-stream`. A blob URL inherits this page's
+   origin, so serving a sender-supplied `text/html` would be serving a script that runs
+   as the app.
+2. **`filename`** has control characters, path separators, a leading `..` and the
+   Windows-reserved punctuation stripped, falling back to the reference's BT-122 id and
+   then to `attachment`. A download lands wherever the browser puts downloads, and the
+   name must not try to steer that.
+
+Malformed base64 is the third case: `decodeAttachment` throws, and the list says so
+under the button rather than saving a corrupt file.
+
+**Naming note.** The component is `AttachmentList.tsx`, not `Attachments.tsx`, because
+on a case-insensitive filesystem the latter collides with `attachments.ts` — TypeScript
+resolves `./Attachments` to the `.ts` file and reports TS1261.
+
+**Only `Norwegian-example-1.xml` carries an embedded file**, and it is 21 bytes of text
+declared as `application/pdf` with a `.csv` filename — an upstream quirk that happens to
+exercise the type/name mismatch nicely. The large-file path is covered by unit tests
+rather than a fixture; adding a multi-megabyte sample to the repo to demonstrate it
+would cost more than it proves.
 
 ### 3.6 Smaller items - **priority: low-medium**
 

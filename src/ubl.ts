@@ -173,6 +173,12 @@ export type DocumentReference = {
   uri: string;
   attachmentFilename: string;
   attachmentMime: string;
+  /**
+   * BT-125, still base64. Kept encoded: decoding it here would hold a second copy of
+   * every embedded file for as long as the document is open, and nothing needs the
+   * bytes until someone asks to save them. `attachments.ts` decodes on the click.
+   */
+  attachmentContent: string;
 };
 
 export type Delivery = {
@@ -474,6 +480,9 @@ function parseDocumentReference(ref: Element): DocumentReference {
     ]),
     attachmentFilename: binary?.getAttribute('filename') ?? '',
     attachmentMime: binary?.getAttribute('mimeCode') ?? '',
+    // A writer is free to wrap base64 across lines, and `atob` rejects whitespace, so
+    // it comes out of the XML normalised rather than at the point of use.
+    attachmentContent: (binary?.textContent ?? '').replace(/\s+/g, ''),
   };
 }
 

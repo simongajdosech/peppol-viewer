@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { AttachmentList } from './AttachmentList';
 import { SAMPLES } from './samples';
 import { parseUbl, type UblDocument } from './ubl';
 import { LOCALES, translation, type Locale } from './i18n';
@@ -126,6 +127,10 @@ export default function App() {
         </header>
 
         {error && <p className="error">{error}</p>}
+
+        {/* Above both views on purpose: a file that came with the document is worth
+            reaching whether you are reading the rendered page or the raw XML. */}
+        {invoice && <AttachmentList invoice={invoice} t={t} />}
 
         {showXml && source ? (
           <pre className="xml">{source.xml}</pre>

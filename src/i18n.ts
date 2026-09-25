@@ -93,6 +93,9 @@ export type Strings = {
   notes: string;
   attachments: string;
   embedded: string;
+  embeddedAttachments: string;
+  attachmentDownload: string;
+  attachmentBroken: (name: string) => string;
   // functions
   vatOn: (category: string, percent: string, base: string) => string;
   vatIn: (currency: string) => string;
@@ -191,6 +194,9 @@ const en: Strings = {
   notes: 'Notes',
   attachments: 'Attachments & references',
   embedded: 'embedded',
+  embeddedAttachments: 'Attached files',
+  attachmentDownload: 'Save this file',
+  attachmentBroken: (name) => `${name} could not be decoded: the sender's base64 is malformed.`,
   vatOn: (category, percent, base) => `VAT ${category}${percent ? ` ${percent}` : ''} on ${base}`,
   vatIn: (currency) => `VAT total in ${currency}`,
   pricePer: (quantity, unit) => `per ${quantity}${unit ? ` ${unit}` : ''}`,
@@ -400,6 +406,9 @@ const sk: Strings = {
   notes: 'Poznámky',
   attachments: 'Prílohy a odkazy',
   embedded: 'vložená príloha',
+  embeddedAttachments: 'Priložené súbory',
+  attachmentDownload: 'Uložiť súbor',
+  attachmentBroken: (name) => `${name} sa nepodarilo dekódovať: odosielateľov base64 je poškodený.`,
   vatOn: (category, percent, base) =>
     `DPH ${category}${percent ? ` ${percent}` : ''} zo základu ${base}`,
   vatIn: (currency) => `DPH celkom v ${currency}`,
@@ -552,6 +561,8 @@ export type Formatters = {
   date: (iso: string) => string;
   country: (code: string) => string;
   address: (address: Address) => string[];
+  /** A file size, scaled to B / kB / MB. */
+  bytes: (size: number) => string;
   /** BT-130 unit: the label alone — "C62" tells a reader nothing, "pcs" does. */
   unit: (code: string) => string;
   /** BT-3 document type, as "380 - Commercial invoice". */
@@ -603,6 +614,24 @@ export function translation(locale: Locale): Translation {
     }
   };
 
+  // The unit stays SI in both languages; only the number is formatted, so Slovak gets
+  // its decimal comma. Anything under a kilobyte is a whole number of bytes.
+  const bytes = (size: number) => {
+    const [scaled, unit, decimals] =
+      size < 1000
+        ? [size, 'B', 0]
+        : size < 1000 * 1000
+          ? [size / 1000, 'kB', 1]
+          : [size / 1000 / 1000, 'MB', 1];
+
+    const formatted = new Intl.NumberFormat(tag, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(scaled);
+
+    return `${formatted} ${unit}`;
+  };
+
   const address = (addr: Address) => {
     const locality = [addr.postalZone, addr.city].filter(Boolean).join(' ');
     return [...addr.lines, locality, addr.subentity, country(addr.country)].filter(Boolean);
@@ -638,6 +667,7 @@ export function translation(locale: Locale): Translation {
     date,
     country,
     address,
+    bytes,
     unit,
     documentType,
     paymentMeans,
