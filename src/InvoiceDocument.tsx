@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
+import { Document, Page, Path, Rect, StyleSheet, Svg, Text, View } from '@react-pdf/renderer';
 import { PDF_FONT } from './fonts';
 import { translation, type Locale, type Translation } from './i18n';
+import { paymentQrs, qrMatrix, type PaymentQrKind } from './qr';
 import type { AllowanceCharge, Line, Party, UblDocument } from './ubl';
 
 const INK = '#1a1d24';
@@ -12,6 +13,20 @@ const BAND = '#f2f4f8';
 
 const BODY = 9;
 const LEADING = 1.45;
+
+/**
+ * Side of one QR code, in points.
+ *
+ * 70pt is 24.7mm, which is the ~2.5cm the PAY by square specification asks for, and
+ * about 0.43mm per module for the largest code either standard produces here. It is
+ * also as large as the payment band can grow while the Slovak sample still fits on one
+ * page. A code this size is a real 2.5cm of paper, so a document already near the
+ * bottom can still gain a page — `base-example.xml` does — which is part of why the
+ * viewer offers a switch for it.
+ */
+const QR_SIZE = 70;
+/** Modules of clear margin the QR specification requires around the symbol. */
+const QR_QUIET = 4;
 
 /**
  * @react-pdf resolves a unitless `lineHeight` against the `fontSize` of the *same*
@@ -117,6 +132,14 @@ const styles = StyleSheet.create({
 
   /* footer blocks */
   band: { backgroundColor: BAND, padding: 10, marginTop: 14 },
+
+  /* payment QR codes */
+  paymentRow: { flexDirection: 'row', gap: 14, justifyContent: 'space-between' },
+  paymentDetails: { flex: 1 },
+  qrRow: { flexDirection: 'row', gap: 8 },
+  qrBlock: { width: QR_SIZE },
+  qrCaption: { ...sized(6.5, 1.2), color: MUTED, marginTop: 2, textAlign: 'center' },
+
   footer: {
     position: 'absolute',
     bottom: 22,
@@ -136,6 +159,12 @@ const styles = StyleSheet.create({
   footerMain: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, height: 11 },
   footerSpec: { ...sized(6.5, 1.3), color: RULE },
 });
+
+/** The caption under each QR. Both are brand names, so the locale only picks the field. */
+const QR_LABEL: Record<PaymentQrKind, (t: Translation) => string> = {
+  bysquare: (t) => t.qrBySquare,
+  epc: (t) => t.qrEpc,
+};
 
 /** Joins the parts of a one-line detail, dropping the empty ones. */
 const join = (parts: (string | false | undefined)[], separator = ' · ') =>
@@ -231,6 +260,25 @@ function TotalRow({
   );
 }
 
+/**
+ * A payment QR drawn as vector art rather than a raster, so it stays crisp at any
+ * print resolution. `qrMatrix` hands back the whole module grid as one path; the
+ * viewBox is in module units with the quiet zone folded in, which leaves the scaling
+ * to the SVG and keeps the module edges on exact boundaries.
+ */
+function QrCode({ payload, size }: { payload: string; size: number }) {
+  const { count, path } = qrMatrix(payload);
+  const side = count + QR_QUIET * 2;
+
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${side} ${side}`}>
+      {/* The quiet zone has to be light even where the band behind it is not. */}
+      <Rect x={0} y={0} width={side} height={side} fill="#ffffff" />
+      <Path d={path} fill={INK} transform={`translate(${QR_QUIET}, ${QR_QUIET})`} />
+    </Svg>
+  );
+}
+
 /** "Charge: Cleaning (CG) · 20% × €1,000.00 · VAT S 25%" — the whole BG-20/BG-21 story. */
 function allowanceLabel(ac: AllowanceCharge, t: Translation, currency: string): string {
   const reason = ac.reason || ac.reasonCode || '—';
@@ -281,9 +329,12 @@ function lineDetails(line: Line, t: Translation, currency: string): string[] {
 export function InvoiceDocument({
   invoice,
   locale,
+  showQr = true,
 }: {
   invoice: UblDocument;
   locale: Locale;
+  /** Draw the payment QR codes in the payment band. Off puts nothing in their place. */
+  showQr?: boolean;
 }) {
   const t = translation(locale);
   const { totals, currency, delivery } = invoice;
@@ -293,6 +344,8 @@ export function InvoiceDocument({
   const exemptions = invoice.taxSubtotals.filter(
     (tax) => tax.exemptionReason || tax.exemptionReasonCode,
   );
+  // Locale-free: the same document yields the same codes in either language.
+  const qrCodes = showQr ? paymentQrs(invoice) : [];
 
   // Payee, tax representative and the delivery address are optional roles. They share
   // a second row of columns that only exists when the document names at least one.
@@ -487,47 +540,62 @@ export function InvoiceDocument({
         {(invoice.paymentMeans.length > 0 || invoice.paymentTerms.length > 0) && (
           <View style={styles.band} wrap={false}>
             <Text style={styles.sectionTitle}>{t.payment}</Text>
-            {invoice.paymentMeans.map((pm, index) => (
-              <View key={index}>
-                {!!pm.account && (
-                  <Text>
-                    <Text style={styles.bold}>{t.account} </Text>
-                    {join([pm.account, pm.bic && `BIC ${pm.bic}`, pm.accountName])}
+            <View style={styles.paymentRow}>
+              <View style={styles.paymentDetails}>
+                {invoice.paymentMeans.map((pm, index) => (
+                  <View key={index}>
+                    {!!pm.account && (
+                      <Text>
+                        <Text style={styles.bold}>{t.account} </Text>
+                        {join([pm.account, pm.bic && `BIC ${pm.bic}`, pm.accountName])}
+                      </Text>
+                    )}
+                    {!!pm.cardId && (
+                      <Text>
+                        <Text style={styles.bold}>{t.card} </Text>
+                        {join([pm.cardId, pm.cardNetwork, pm.cardHolder])}
+                      </Text>
+                    )}
+                    {!!pm.mandateId && (
+                      <Text>
+                        <Text style={styles.bold}>{t.directDebit} </Text>
+                        {join([
+                          `${t.mandate} ${pm.mandateId}`,
+                          pm.debitedAccount && `${t.debitedAccount} ${pm.debitedAccount}`,
+                        ])}
+                      </Text>
+                    )}
+                    {pm.paymentIds.length > 0 && (
+                      <Text>
+                        <Text style={styles.bold}>{t.paymentReference} </Text>
+                        {join(pm.paymentIds)}
+                      </Text>
+                    )}
+                    {!!pm.code && (
+                      <Text style={styles.muted}>
+                        {t.paymentMeansCode} {t.paymentMeans(pm.code, pm.name)}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+                {invoice.paymentTerms.map((term, index) => (
+                  <Text key={index} style={styles.muted}>
+                    {term}
                   </Text>
-                )}
-                {!!pm.cardId && (
-                  <Text>
-                    <Text style={styles.bold}>{t.card} </Text>
-                    {join([pm.cardId, pm.cardNetwork, pm.cardHolder])}
-                  </Text>
-                )}
-                {!!pm.mandateId && (
-                  <Text>
-                    <Text style={styles.bold}>{t.directDebit} </Text>
-                    {join([
-                      `${t.mandate} ${pm.mandateId}`,
-                      pm.debitedAccount && `${t.debitedAccount} ${pm.debitedAccount}`,
-                    ])}
-                  </Text>
-                )}
-                {!!pm.paymentId && (
-                  <Text>
-                    <Text style={styles.bold}>{t.paymentReference} </Text>
-                    {pm.paymentId}
-                  </Text>
-                )}
-                {!!pm.code && (
-                  <Text style={styles.muted}>
-                    {t.paymentMeansCode} {t.paymentMeans(pm.code, pm.name)}
-                  </Text>
-                )}
+                ))}
               </View>
-            ))}
-            {invoice.paymentTerms.map((term, index) => (
-              <Text key={index} style={styles.muted}>
-                {term}
-              </Text>
-            ))}
+
+              {qrCodes.length > 0 && (
+                <View style={styles.qrRow}>
+                  {qrCodes.map((code) => (
+                    <View key={code.kind} style={styles.qrBlock}>
+                      <QrCode payload={code.payload} size={QR_SIZE} />
+                      <Text style={styles.qrCaption}>{QR_LABEL[code.kind](t)}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
         )}
 

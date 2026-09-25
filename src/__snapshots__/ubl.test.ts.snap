@@ -247,9 +247,9 @@ exports[`sample documents > parses Allowance-example.xml 1`] = `
   "payee": null,
   "paymentMeans": [
     {
-      "account": "IBAN32423940",
+      "account": "GB82WEST12345698765432",
       "accountName": "AccountName",
-      "bic": "BIC324098",
+      "bic": "WESTGB2L",
       "cardHolder": "",
       "cardId": "",
       "cardNetwork": "",
@@ -257,7 +257,9 @@ exports[`sample documents > parses Allowance-example.xml 1`] = `
       "debitedAccount": "",
       "mandateId": "",
       "name": "Credit transfer",
-      "paymentId": "Snippet1",
+      "paymentIds": [
+        "Snippet1",
+      ],
     },
   ],
   "paymentTerms": [
@@ -653,7 +655,9 @@ exports[`sample documents > parses Norwegian-example-1.xml 1`] = `
       "debitedAccount": "",
       "mandateId": "",
       "name": "",
-      "paymentId": "0003434323213231",
+      "paymentIds": [
+        "0003434323213231",
+      ],
     },
   ],
   "paymentTerms": [
@@ -925,7 +929,9 @@ exports[`sample documents > parses SK-full-example.xml 1`] = `
       "debitedAccount": "",
       "mandateId": "",
       "name": "Prevodný príkaz",
-      "paymentId": "2026000042",
+      "paymentIds": [
+        "2026000042",
+      ],
     },
   ],
   "paymentTerms": [
@@ -1084,7 +1090,7 @@ exports[`sample documents > parses SK-validation-example.xml 1`] = `
       "debitedAccount": "",
       "mandateId": "",
       "name": "",
-      "paymentId": "",
+      "paymentIds": [],
     },
   ],
   "paymentTerms": [],
@@ -1327,9 +1333,9 @@ exports[`sample documents > parses Vat-category-S.xml 1`] = `
   "payee": null,
   "paymentMeans": [
     {
-      "account": "IBAN32423940",
+      "account": "GB82WEST12345698765432",
       "accountName": "AccountName",
-      "bic": "BIC324098",
+      "bic": "WESTGB2L",
       "cardHolder": "",
       "cardId": "",
       "cardNetwork": "",
@@ -1337,7 +1343,9 @@ exports[`sample documents > parses Vat-category-S.xml 1`] = `
       "debitedAccount": "",
       "mandateId": "",
       "name": "Credit transfer",
-      "paymentId": "Snippet1",
+      "paymentIds": [
+        "Snippet1",
+      ],
     },
   ],
   "paymentTerms": [
@@ -1550,9 +1558,9 @@ exports[`sample documents > parses base-creditnote-correction.xml 1`] = `
   "payee": null,
   "paymentMeans": [
     {
-      "account": "IBAN32423940",
+      "account": "GB82WEST12345698765432",
       "accountName": "AccountName",
-      "bic": "BIC324098",
+      "bic": "WESTGB2L",
       "cardHolder": "",
       "cardId": "",
       "cardNetwork": "",
@@ -1560,7 +1568,9 @@ exports[`sample documents > parses base-creditnote-correction.xml 1`] = `
       "debitedAccount": "",
       "mandateId": "",
       "name": "Credit transfer",
-      "paymentId": "Snippet1",
+      "paymentIds": [
+        "Snippet1",
+      ],
     },
   ],
   "paymentTerms": [
@@ -1768,9 +1778,9 @@ exports[`sample documents > parses base-example.xml 1`] = `
   "payee": null,
   "paymentMeans": [
     {
-      "account": "IBAN32423940",
+      "account": "GB82WEST12345698765432",
       "accountName": "AccountName",
-      "bic": "BIC324098",
+      "bic": "WESTGB2L",
       "cardHolder": "",
       "cardId": "",
       "cardNetwork": "",
@@ -1778,7 +1788,9 @@ exports[`sample documents > parses base-example.xml 1`] = `
       "debitedAccount": "",
       "mandateId": "",
       "name": "Credit transfer",
-      "paymentId": "Snippet1",
+      "paymentIds": [
+        "Snippet1",
+      ],
     },
   ],
   "paymentTerms": [
@@ -1929,7 +1941,7 @@ exports[`sample documents > parses broken-example.xml 1`] = `
       "debitedAccount": "",
       "mandateId": "",
       "name": "",
-      "paymentId": "",
+      "paymentIds": [],
     },
   ],
   "paymentTerms": [],
@@ -2076,7 +2088,7 @@ exports[`sample documents > parses vat-category-E.xml 1`] = `
   "payee": null,
   "paymentMeans": [
     {
-      "account": "SE1212341234123412",
+      "account": "SE4550000000058398257466",
       "accountName": "",
       "bic": "SEXDABCD",
       "cardHolder": "",
@@ -2086,7 +2098,7 @@ exports[`sample documents > parses vat-category-E.xml 1`] = `
       "debitedAccount": "",
       "mandateId": "",
       "name": "",
-      "paymentId": "",
+      "paymentIds": [],
     },
   ],
   "paymentTerms": [

@@ -133,10 +133,10 @@
         <cbc:PaymentMeansCode name="Credit transfer">30</cbc:PaymentMeansCode>
         <cbc:PaymentID>Snippet1</cbc:PaymentID>
         <cac:PayeeFinancialAccount>
-            <cbc:ID>IBAN32423940</cbc:ID>
+            <cbc:ID>GB82WEST12345698765432</cbc:ID>
             <cbc:Name>AccountName</cbc:Name>
             <cac:FinancialInstitutionBranch>
-                <cbc:ID>BIC324098</cbc:ID>
+                <cbc:ID>WESTGB2L</cbc:ID>
             </cac:FinancialInstitutionBranch>
         </cac:PayeeFinancialAccount>
     </cac:PaymentMeans>

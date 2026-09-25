@@ -10,7 +10,9 @@ export default defineConfig({
     // discovered-late path, where Vite re-optimises mid-session and reloads the page
     // with a second copy of React — which surfaces as "Invalid hook call" in usePDF.
     // Not needed for the production build, which bundles everything up front.
-    include: ['@react-pdf/renderer', 'react-pdf'],
+    // The QR packages sit behind the same dynamic import, so they are named for the
+    // same reason. `qrcode-generator` also ships CJS, which has to be pre-bundled.
+    include: ['@react-pdf/renderer', 'react-pdf', 'bysquare/pay', 'qrcode-generator'],
   },
   test: {
     // parseUbl builds on DOMParser, which only exists in a DOM environment.

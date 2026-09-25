@@ -240,29 +240,85 @@ is not visible in the XML view. Since `validate()` is pure and cheap and sits ou
 lazily loaded PDF chunk, moving it to the app header would make it available in both
 views.
 
-### 3.4 Payment QR code - **priority: medium-high**
+### 3.4 Payment QR code - **priority: medium-high** — **DONE**
 
-All the inputs are already parsed. Render into the existing payment band.
+All the inputs were already parsed. Rendered into the existing payment band.
 
-- [ ] **PAY by square** for the Slovak audience, **EPC/SEPA QR** (EPC069-12) for the rest.
-      Pick by supplier country / IBAN prefix, or offer both when the data supports it.
-- [ ] The payload must carry, at minimum:
-  - IBAN (`PaymentMeans.account`) and BIC (`PaymentMeans.bic`)
-  - amount (`totals.payable`) and currency (`invoice.currency`)
-  - **variable symbol** - this is `cbc:PaymentID` (BT-83), parsed as
-    `PaymentMeans.paymentId`; `SK-full-example.xml` carries `2026000042`. It is the field
-    Slovak payers actually match the payment on, so it must never be dropped.
-  - constant symbol and specific symbol when present (SK practice; not in BIS core, so
-    they arrive either in `PaymentID` variants or in payment terms text - decide a
-    convention and document it here once implemented)
-  - due date (`invoice.dueDate`), beneficiary name (`PaymentMeans.accountName` falling
-    back to `supplier.name`), and the payment note / reference
-- [ ] Skip the QR entirely when there is no IBAN or no payable amount - a QR that scans
-      into an incomplete transfer is worse than none.
-- [ ] Rendering: generate the matrix and draw it as SVG inside `@react-pdf` rather than
-      rasterising, so it stays sharp in print.
-- [ ] Test the payload encoding directly - build the string/binary payload from a known
-      `UblDocument` and assert on it, rather than trying to assert on the rendered QR.
+- [x] **PAY by square** when the IBAN is Slovak or the supplier is; **EPC069-12**
+      ("SEPA QR", "GiroCode") whenever the document is in euro. A Slovak euro invoice
+      offers both, side by side, which is what `SK-full-example.xml` shows.
+- [x] The payload carries IBAN, BIC, amount, currency, due date, beneficiary name
+      (`PaymentMeans.accountName` falling back to `supplier.name`), the invoice number
+      as the payment note, and the Slovak symbols.
+- [x] Skipped entirely — no code at all rather than a bad one — for a **credit note**
+      (the money moves the other way), a non-positive payable, a missing beneficiary
+      name, or an account that is not a real IBAN.
+- [x] The matrix is drawn as SVG inside `@react-pdf`, so it stays sharp in print.
+- [x] `src/qr.test.ts` asserts the payloads directly, plus a decode round-trip through
+      `bysquare` and a module-by-module comparison of the drawn path against the
+      generator's own grid.
+
+**The symbol convention, as promised above.** EN 16931 has no field for the Slovak
+variable, constant and specific symbols; BIS carries only BT-83, `cbc:PaymentID`. UBL
+lets that element repeat, and that is where SK senders put the rest, so `ubl.ts` now
+parses **all** of them (`PaymentMeans.paymentIds`, replacing the single `paymentId`) and
+`paymentSymbols` in `qr.ts` classifies them: bare digits or a `VS` prefix is the variable
+symbol, `KS` the constant, `SS` the specific; the prefix may be followed by a space,
+colon, dot or dash. Free text (`Snippet1`) and over-long values are left out of the QR
+and only printed in the band — half a symbol matches no payment, and a bank rejects
+anything non-numeric in those fields. The classification lives in `qr.ts`, not the
+parser: it is a national convention, not something UBL states.
+
+**Four decisions worth recording:**
+
+1. **`qr.ts` is locale-free**, like `validate.ts`. Nothing inside a payload may change
+   with the viewer's language, or the payer would scan a different transfer depending on
+   which language the document happened to be shown in.
+2. **No SEPA country list.** EPC eligibility is "valid IBAN + EUR + an amount in range",
+   not membership in a table that goes stale — the same reasoning as the EAS list in 3.3.
+   IBAN validity *is* checked properly: structure, the country's length, and mod-97,
+   which is what rejected the `IBAN32423940` placeholder the upstream OpenPEPPOL files
+   carry (see the sample note below).
+3. **`bysquare` + `qrcode-generator` as dependencies.** PAY by square is CRC32 + LZMA +
+   base32hex over a tab-separated record; hand-rolling an LZMA encoder was not sensible.
+   Both land in the lazily loaded PDF chunk, which grew 1,850 kB → 2,053 kB (640 → 705 kB
+   gzipped); the entry chunk is unchanged at 249 kB. `bysquare` pulls in `validator`,
+   which is most of that. Its model validation is left on — it throws on anything a bank
+   would reject and the code is then dropped — and trading that for bytes in a chunk
+   nobody waits on would be the wrong way round.
+4. **QR size is 70pt (24.7mm)**, the ~2.5cm PAY by square asks for. It is also as large
+   as the payment band can grow while the Slovak sample still fits on one page, which is
+   why the planned "Scan to pay" line above the codes was dropped — the captions under
+   them say enough. `pdf.smoke.test.tsx` pins that one-page result. A code this size is a
+   real 2.5cm of paper, so a document already near the bottom of its last page can still
+   gain one: `base-example.xml` does.
+
+**The toolbar switch.** `InvoiceDocument` takes `showQr` (default on) and
+`InvoicePreview` drives it from a checkbox in the preview toolbar, beside the zoom and
+the validation badge. It runs through the same `usePDF` update as the locale, so the
+preview and the downloaded file stay the same bytes. The checkbox is **hidden** when the
+document yields no codes at all — a credit note, or anything without a usable IBAN —
+because a switch that visibly does nothing is worse than no switch. It is also the
+answer to the page-gain above: turn the codes off and `base-example.xml` is back to one
+page.
+
+**The sample IBANs are now real.** The OpenPEPPOL test files ship `IBAN32423940` and
+`BIC324098`, and `vat-category-E.xml` an SE IBAN six characters short — so eight of the
+nine bundled documents failed the IBAN check and showed no code, which made the feature
+almost invisible. The bundled copies now carry the published example IBANs instead:
+
+| sample | account | what it now shows |
+| --- | --- | --- |
+| `base-example`, `Allowance-example`, `Vat-category-S` | `GB82WEST12345698765432` / `WESTGB2L` | the EPC code alone — euro, GB account |
+| `base-creditnote-correction` | the same GB account | nothing: a credit note never gets one |
+| `vat-category-E` | `SE4550000000058398257466` | nothing: a valid IBAN, but billed in GBP |
+| `SK-full-example` | unchanged | both codes |
+| `Norwegian-example-1` | unchanged (already a real NO IBAN) | nothing: NOK |
+| `SK-validation-example`, `broken-example` | no `PayeeFinancialAccount` at all | nothing |
+
+The three "nothing" rows are worth keeping as they are — each one exercises a different
+reason for withholding a code. `isIban` still has the old placeholder strings pinned as
+rejections, so the check itself is not weakened by the samples having improved.
 
 ### 3.5 Embedded attachments - **priority: medium**
 

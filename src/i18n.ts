@@ -87,6 +87,9 @@ export type Strings = {
   debitedAccount: string;
   paymentMeansCode: string;
   paymentReference: string;
+  /** Names of the two payment QR standards; brand names, so not translated. */
+  qrBySquare: string;
+  qrEpc: string;
   notes: string;
   attachments: string;
   embedded: string;
@@ -99,6 +102,7 @@ export type Strings = {
   openOwnFile: string;
   showXml: string;
   showDocument: string;
+  paymentQr: string;
   download: string;
   rendering: string;
   loadingDocument: string;
@@ -182,6 +186,8 @@ const en: Strings = {
   debitedAccount: 'Debited account',
   paymentMeansCode: 'Payment means',
   paymentReference: 'Reference',
+  qrBySquare: 'PAY by square',
+  qrEpc: 'SEPA QR',
   notes: 'Notes',
   attachments: 'Attachments & references',
   embedded: 'embedded',
@@ -192,6 +198,7 @@ const en: Strings = {
   openOwnFile: 'Open your own XML…',
   showXml: 'Show XML',
   showDocument: 'Show document',
+  paymentQr: 'Payment QR',
   download: 'Download PDF',
   rendering: 'Rendering…',
   loadingDocument: 'Loading document…',
@@ -388,6 +395,8 @@ const sk: Strings = {
   debitedAccount: 'Zaťažovaný účet',
   paymentMeansCode: 'Spôsob úhrady',
   paymentReference: 'Variabilný symbol',
+  qrBySquare: 'PAY by square',
+  qrEpc: 'SEPA QR',
   notes: 'Poznámky',
   attachments: 'Prílohy a odkazy',
   embedded: 'vložená príloha',
@@ -399,6 +408,7 @@ const sk: Strings = {
   openOwnFile: 'Otvoriť vlastné XML…',
   showXml: 'Zobraziť XML',
   showDocument: 'Zobraziť doklad',
+  paymentQr: 'QR platba',
   download: 'Stiahnuť PDF',
   rendering: 'Generujem…',
   loadingDocument: 'Načítavam doklad…',

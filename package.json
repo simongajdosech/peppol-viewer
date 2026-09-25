@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
+    "bysquare": "^4.0.2",
     "pdfjs-dist": "6.3.289",
+    "qrcode-generator": "^2.0.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-pdf": "^11.0.0"

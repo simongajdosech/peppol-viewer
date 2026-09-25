@@ -148,7 +148,11 @@ export type AllowanceCharge = {
 export type PaymentMeans = {
   code: string;
   name: string;
-  paymentId: string;
+  /**
+   * BT-83. UBL lets the element repeat, and Slovak senders use the extra ones to carry
+   * the constant and specific symbols — see `paymentSymbols` in `qr.ts`.
+   */
+  paymentIds: string[];
   account: string;
   accountName: string;
   bic: string;
@@ -416,7 +420,9 @@ function parsePaymentMeans(pm: Element): PaymentMeans {
   return {
     code: val(pm, CBC, 'PaymentMeansCode'),
     name: attr(pm, CBC, 'PaymentMeansCode', 'name'),
-    paymentId: val(pm, CBC, 'PaymentID'),
+    paymentIds: kids(pm, CBC, 'PaymentID')
+      .map((id) => id.textContent?.trim() ?? '')
+      .filter(Boolean),
     account: val(account, CBC, 'ID'),
     accountName: val(account, CBC, 'Name'),
     bic: path(account, [

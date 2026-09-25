@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { usePDF } from '@react-pdf/renderer';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { InvoiceDocument } from './InvoiceDocument';
 import { ValidationBadge } from './Validation';
 import { registerPdfFonts } from './fonts';
+import { paymentQrs } from './qr';
 import { validate } from './validate';
 import type { Locale, Translation } from './i18n';
 import type { UblDocument } from './ubl';
@@ -44,13 +45,18 @@ export function InvoicePreview({
   });
   const [pageCount, setPageCount] = useState(0);
   const [zoomIndex, setZoomIndex] = useState(3);
+  const [showQr, setShowQr] = useState(true);
+  const qrToggleId = useId();
 
-  // Pure and cheap, but the document only changes when a new file is loaded.
+  // Both pure and cheap, but they only change when a new file is loaded.
   const findings = useMemo(() => validate(invoice), [invoice]);
+  // There is nothing to offer a switch for on a document that yields no codes —
+  // a credit note, or one without a usable IBAN.
+  const hasQr = useMemo(() => paymentQrs(invoice).length > 0, [invoice]);
 
   useEffect(() => {
-    update(<InvoiceDocument invoice={invoice} locale={locale} />);
-  }, [invoice, locale, update]);
+    update(<InvoiceDocument invoice={invoice} locale={locale} showQr={showQr} />);
+  }, [invoice, locale, showQr, update]);
 
   const kind = invoice.isCreditNote ? 'creditnote' : 'invoice';
   const filename = `${kind}-${invoice.id || 'document'}-${locale}.pdf`;
@@ -85,6 +91,18 @@ export function InvoicePreview({
         <span className="status">
           {instance.loading ? t.rendering : pageCount > 0 ? t.pageCount(pageCount) : ''}
         </span>
+
+        {hasQr && (
+          <label className="qr-toggle" htmlFor={qrToggleId}>
+            <input
+              id={qrToggleId}
+              type="checkbox"
+              checked={showQr}
+              onChange={(event) => setShowQr(event.target.checked)}
+            />
+            {t.paymentQr}
+          </label>
+        )}
 
         <ValidationBadge findings={findings} currency={invoice.currency} t={t} />
 

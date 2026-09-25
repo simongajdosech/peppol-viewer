@@ -139,6 +139,21 @@ main {
   opacity: 0.6;
 }
 
+.qr-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  opacity: 0.75;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.qr-toggle input {
+  margin: 0;
+  cursor: pointer;
+}
+
 .download {
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -321,3 +336,4 @@ button.badge {
   border-color: #1e4fa3;
   font-weight: 600;
 }
+

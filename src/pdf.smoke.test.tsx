@@ -20,8 +20,14 @@ const samples = import.meta.glob('../public/samples/*.xml', {
 const sample = (name: string) => parseUbl(samples[`../public/samples/${name}`]);
 
 /** Renders the document and reads the text back out, one entry per page. */
-async function render(invoice: UblDocument, locale: 'en' | 'sk' = 'en'): Promise<string[]> {
-  const bytes = await renderToBuffer(<InvoiceDocument invoice={invoice} locale={locale} />);
+async function render(
+  invoice: UblDocument,
+  locale: 'en' | 'sk' = 'en',
+  showQr = true,
+): Promise<string[]> {
+  const bytes = await renderToBuffer(
+    <InvoiceDocument invoice={invoice} locale={locale} showQr={showQr} />,
+  );
 
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   // renderToBuffer hands back a Node Buffer; pdfjs insists on a plain Uint8Array.
@@ -58,7 +64,7 @@ describe('rendered PDF', () => {
   it('puts the document on a page at all', async () => {
     const pages = await render(sample('base-example.xml'));
 
-    expect(pages).toHaveLength(1);
+    expect(pages.length).toBeGreaterThan(0);
     expect(squash(pages[0])).toContain('INVOICE');
   });
 
@@ -124,6 +130,44 @@ describe('rendered PDF', () => {
 
     expect(text).toContain('999');
     expect(text).toContain('ZZZ');
+  });
+
+  it('puts the payment QR codes on the page, and only where there are any', async () => {
+    // The matrix itself is vector art with no text to read back, so the caption under
+    // each code stands in for it; `qr.test.ts` pins what the codes actually encode.
+    const withCodes = squash((await render(sample('SK-full-example.xml'))).join(' '));
+
+    expect(withCodes).toContain(squash('PAY by square'));
+    expect(withCodes).toContain(squash('SEPA QR'));
+
+    // base-example is a GB account billing in euro: the SEPA code on its own.
+    const one = squash((await render(sample('base-example.xml'))).join(' '));
+
+    expect(one).toContain(squash('SEPA QR'));
+    expect(one).not.toContain(squash('PAY by square'));
+
+    // A credit note is money going the other way, so it gets no code at all.
+    const without = squash((await render(sample('base-creditnote-correction.xml'))).join(' '));
+
+    expect(without).toContain(squash('Payment')); // the band is still there
+    expect(without).not.toContain(squash('PAY by square'));
+    expect(without).not.toContain(squash('SEPA QR'));
+  });
+
+  it('leaves the codes out when the caller turns them off', async () => {
+    const invoice = sample('SK-full-example.xml');
+    const text = squash((await render(invoice, 'en', false)).join(' '));
+
+    expect(text).toContain(squash('Payment'));
+    expect(text).not.toContain(squash('PAY by square'));
+    expect(text).not.toContain(squash('SEPA QR'));
+  });
+
+  it('keeps the Slovak sample on one page, QR codes and all', async () => {
+    // The payment band grew by the height of a code, and this is the fullest document
+    // that still has to fit. base-example does gain a page, which is what the toolbar
+    // switch is there for.
+    expect(await render(sample('SK-full-example.xml'))).toHaveLength(1);
   });
 
   it('keeps Slovak diacritics, which the built-in PDF fonts would drop', async () => {
