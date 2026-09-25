@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { usePDF } from '@react-pdf/renderer';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -40,13 +40,14 @@ export function InvoicePreview({
   locale: Locale;
   t: Translation;
 }) {
-  const [instance, update] = usePDF({
-    document: <InvoiceDocument invoice={invoice} locale={locale} />,
-  });
   const [pageCount, setPageCount] = useState(0);
   const [zoomIndex, setZoomIndex] = useState(3);
   const [showQr, setShowQr] = useState(true);
   const qrToggleId = useId();
+
+  const [instance, update] = usePDF({
+    document: <InvoiceDocument invoice={invoice} locale={locale} showQr={showQr} />,
+  });
 
   // Both pure and cheap, but they only change when a new file is loaded.
   const findings = useMemo(() => validate(invoice), [invoice]);
@@ -54,7 +55,25 @@ export function InvoicePreview({
   // a credit note, or one without a usable IBAN.
   const hasQr = useMemo(() => paymentQrs(invoice).length > 0, [invoice]);
 
+  /**
+   * What `usePDF` was constructed with, and therefore what it has already rendered.
+   *
+   * The effect below only has work to do once one of these actually changes. Without
+   * the comparison, mounting rendered the same invoice twice: `usePDF` once from its
+   * initial document, then the effect again from a freshly created element, throwing
+   * away a PDF that was already correct along with the blob the viewer had started
+   * loading. Comparing values rather than counting runs also keeps StrictMode's second
+   * mount from re-rendering in development.
+   */
+  const renderedFrom = useRef({ invoice, locale, showQr });
+
   useEffect(() => {
+    const previous = renderedFrom.current;
+    if (previous.invoice === invoice && previous.locale === locale && previous.showQr === showQr) {
+      return;
+    }
+
+    renderedFrom.current = { invoice, locale, showQr };
     update(<InvoiceDocument invoice={invoice} locale={locale} showQr={showQr} />);
   }, [invoice, locale, showQr, update]);
 

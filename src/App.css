@@ -9,6 +9,32 @@
   text-align: left;
 }
 
+/* drag and drop */
+
+.app.dragging {
+  outline: 2px dashed #1e4fa3;
+  outline-offset: -0.75rem;
+}
+
+/*
+  Anchored to the viewport rather than to .app: the page scrolls while a file is being
+  dragged over it, and a hint that scrolls away is a hint nobody reads.
+*/
+.drop-hint {
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  background: #1e4fa3;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
 /* sidebar */
 
 aside {

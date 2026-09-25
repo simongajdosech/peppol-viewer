@@ -39,9 +39,9 @@ sample documents already sitting in `public/samples/`. That is the ideal test ta
 new `tsconfig.test.json` (referenced from `tsconfig.json`), so `tsc -b` still type-checks
 them without leaking Node globals into the app sources.
 
-One `it.todo` marker is parked in the suite for work scheduled below — the Slovak zero
-plural (Phase 3.6). Turn it into a real test when the fix lands. (The root-element guard
-todo became a real `describe` block when Phase 2 landed.)
+Both `it.todo` markers parked here have since become real tests: the root-element guard
+when Phase 2 landed, and the Slovak zero plural when Phase 3.6 did. Nothing is parked
+now.
 
 ---
 
@@ -370,16 +370,48 @@ exercise the type/name mismatch nicely. The large-file path is covered by unit t
 rather than a fixture; adding a multi-megabyte sample to the repo to demonstrate it
 would cost more than it proves.
 
-### 3.6 Smaller items - **priority: low-medium**
+### 3.6 Smaller items - **priority: low-medium** — **DONE**
 
-- [ ] Drag-and-drop a file onto the page; `src/App.tsx:120` is a file input only.
-- [ ] Put the selected sample and locale in the URL hash so a link reproduces a view.
-- [ ] Remove the unreferenced `src/assets/hero.png` and `src/assets/vite.svg`.
-- [ ] `pageCount` hand-rolls Slovak plurals in `src/i18n.ts` and gets zero wrong -
-      "0 strany" should be "0 strán". Use `Intl.PluralRules`.
-- [ ] Double PDF render on mount - `src/InvoicePreview.tsx:29-31`. `usePDF` renders the
-      document it was constructed with, then the effect immediately calls `update()` with a
-      freshly created element. Skip the first effect run.
+- [x] **Drag-and-drop** onto anywhere in the app, with a dashed outline and a hint
+      pinned to the bottom of the viewport while a file is over it. `dragover` has to
+      call `preventDefault` or the browser navigates to the file instead of dropping
+      it, and `dragleave` checks `relatedTarget` so moving between children does not
+      flicker the hint off. Shares `openFile` with the existing file input.
+- [x] **The view in the URL hash**, `#sample=…&locale=…`, read before the first render
+      rather than applied afterwards in an effect. `src/viewState.ts` holds the parse
+      and the format, pure and tested; both halves are validated against `SAMPLES` and
+      `LOCALES`, because a hash is something anyone can type. Written with
+      `replaceState`, so flicking between languages does not fill the back button, and
+      a `hashchange` listener makes the URL authoritative if someone edits it.
+- [x] Removed `src/assets/`, which held only the two unreferenced files.
+- [x] **`Intl.PluralRules` for `pageCount`.** The dictionaries now carry `pageForms`
+      keyed by CLDR plural category and `translation()` picks the form. Slovak groups
+      zero with five-and-up ("0 strán"), which the old `n < 5` rule got wrong. The
+      `it.todo` parked in Phase 1 is now a real test, along with the 2/4/5 boundaries.
+- [x] **Double PDF render on mount.** `usePDF` is now constructed with the same element
+      the effect would produce, and the effect holds a ref to what was last rendered and
+      returns early when nothing changed. Comparing values rather than counting runs
+      also stops StrictMode's second mount from re-rendering in development.
+
+**Measured, not assumed.** Counting the `application/pdf` blobs `usePDF` creates:
+2 per mount before, 1 after; 1 per locale switch either way. (Temporarily defeating the
+guard in the running dev server and watching the count go back to 2 is what confirmed
+the first number.)
+
+**A pre-existing bug fell out of the drag-and-drop work.** Opening your own file sets
+`selected` to `''`, and the sample-fetching effect then ran anyway and fetched
+`samples/` with no name on the end. Whatever came back — a directory listing on the dev
+server, a 404 page in production — replaced the document just opened with an XML parse
+error. The effect now returns early when `selected` is empty. This was never
+drag-specific; the file input had it from the start.
+
+**Two hash details worth knowing.** A document the reader opened themselves is left out
+of the hash entirely (only the locale travels) — naming a local file in a link would
+promise whoever opened it something they do not have. And when the hash names a sample
+or a language the app does not have, `readViewState` falls back to what is on screen,
+React bails out of both `setState` calls, and the writing effect therefore never runs —
+so the `hashchange` handler rewrites the URL itself rather than leave it saying
+something untrue.
 
 ---
 

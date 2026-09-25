@@ -155,14 +155,20 @@ describe('page count', () => {
     expect(en.pageCount(3)).toBe('3 pages');
   });
 
-  it('uses the Slovak one/few/many forms', () => {
+  it('uses the Slovak one/few/other forms', () => {
     expect(sk.pageCount(1)).toBe('1 strana');
-    expect(sk.pageCount(3)).toBe('3 strany');
+    expect(sk.pageCount(2)).toBe('2 strany');
+    expect(sk.pageCount(4)).toBe('4 strany');
+    expect(sk.pageCount(5)).toBe('5 strán');
     expect(sk.pageCount(7)).toBe('7 strán');
   });
 
-  // Phase 3.6: the hand-rolled rule reads 0 as "few" and says "0 strany".
-  it.todo('uses the Slovak many form for zero');
+  it('puts zero in the Slovak "other" form, not the few form', () => {
+    // The rule this replaced read 0 as "few" and said "0 strany". CLDR groups zero
+    // with five and upwards, which is where "strán" belongs.
+    expect(sk.pageCount(0)).toBe('0 strán');
+    expect(en.pageCount(0)).toBe('0 pages');
+  });
 });
 
 describe('dictionaries', () => {

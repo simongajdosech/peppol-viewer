@@ -103,13 +103,18 @@ export type Strings = {
   // app chrome
   appTagline: string;
   openOwnFile: string;
+  dropHint: string;
   showXml: string;
   showDocument: string;
   paymentQr: string;
   download: string;
   rendering: string;
   loadingDocument: string;
-  pageCount: (n: number) => string;
+  /**
+   * "page" in each form the language has, keyed by CLDR plural category. `Intl` picks
+   * the category; this is only the wording, which is the part a dictionary owns.
+   */
+  pageForms: Partial<Record<Intl.LDMLPluralRule, string>>;
   language: string;
   // code list wording, keyed by the semantic keys in codes.ts
   codes: Record<string, string>;
@@ -202,13 +207,14 @@ const en: Strings = {
   pricePer: (quantity, unit) => `per ${quantity}${unit ? ` ${unit}` : ''}`,
   appTagline: 'UBL / Peppol BIS Billing 3.0 → printable document',
   openOwnFile: 'Open your own XML…',
+  dropHint: 'Drop an XML file to open it',
   showXml: 'Show XML',
   showDocument: 'Show document',
   paymentQr: 'Payment QR',
   download: 'Download PDF',
   rendering: 'Rendering…',
   loadingDocument: 'Loading document…',
-  pageCount: (n) => `${n} page${n === 1 ? '' : 's'}`,
+  pageForms: { one: 'page', other: 'pages' },
   language: 'Language',
   codes: {
     // units — the label stands alone, the code itself says nothing to a reader
@@ -415,13 +421,16 @@ const sk: Strings = {
   pricePer: (quantity, unit) => `za ${quantity}${unit ? ` ${unit}` : ''}`,
   appTagline: 'UBL / Peppol BIS Billing 3.0 → tlačový doklad',
   openOwnFile: 'Otvoriť vlastné XML…',
+  dropHint: 'Pustite sem XML súbor',
   showXml: 'Zobraziť XML',
   showDocument: 'Zobraziť doklad',
   paymentQr: 'QR platba',
   download: 'Stiahnuť PDF',
   rendering: 'Generujem…',
   loadingDocument: 'Načítavam doklad…',
-  pageCount: (n) => `${n} ${n === 1 ? 'strana' : n < 5 ? 'strany' : 'strán'}`,
+  // few is 2-4; many is the fractional form, which a page count never reaches;
+  // other covers 0 and 5 upwards — the zero the hand-rolled rule used to get wrong.
+  pageForms: { one: 'strana', few: 'strany', many: 'strany', other: 'strán' },
   language: 'Jazyk',
   codes: {
     // units — the label stands alone, the code itself says nothing to a reader
@@ -563,6 +572,8 @@ export type Formatters = {
   address: (address: Address) => string[];
   /** A file size, scaled to B / kB / MB. */
   bytes: (size: number) => string;
+  /** "3 pages" / "3 strany", with the plural form `Intl` says the language wants. */
+  pageCount: (n: number) => string;
   /** BT-130 unit: the label alone — "C62" tells a reader nothing, "pcs" does. */
   unit: (code: string) => string;
   /** BT-3 document type, as "380 - Commercial invoice". */
@@ -632,6 +643,14 @@ export function translation(locale: Locale): Translation {
     return `${formatted} ${unit}`;
   };
 
+  // Slovak has three forms and picks "strán" for both zero and five upwards, which a
+  // hand-rolled `n < 5` rule gets wrong at zero. CLDR already knows all of this.
+  const plurals = new Intl.PluralRules(tag);
+  const pageCount = (n: number) => {
+    const forms = DICT[locale].pageForms;
+    return `${n} ${forms[plurals.select(n)] ?? forms.other ?? ''}`;
+  };
+
   const address = (addr: Address) => {
     const locality = [addr.postalZone, addr.city].filter(Boolean).join(' ');
     return [...addr.lines, locality, addr.subentity, country(addr.country)].filter(Boolean);
@@ -668,6 +687,7 @@ export function translation(locale: Locale): Translation {
     country,
     address,
     bytes,
+    pageCount,
     unit,
     documentType,
     paymentMeans,
