@@ -1,4 +1,4 @@
-import { LOCALES, type Locale } from './i18n';
+import { LOCALES, type Locale } from '../lib/i18n';
 import { SAMPLES } from './samples';
 
 /**

@@ -9,8 +9,12 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-demo
 dist-ssr
 *.local
+
+# staged for publication by scripts/copy-fonts.mjs
+/fonts
 
 # Editor directories and files
 .vscode/*

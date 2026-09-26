@@ -6,7 +6,7 @@ import { parseUbl } from './ubl';
 // Resolved by Vite at transform time, so the fixtures are found regardless of
 // the working directory the suite is started from.
 const sampleFiles = Object.entries(
-  import.meta.glob('../public/samples/*.xml', {
+  import.meta.glob('../../public/samples/*.xml', {
     query: '?raw',
     import: 'default',
     eager: true,

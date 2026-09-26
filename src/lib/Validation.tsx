@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { ANCHOR_BY_RULE, type Anchor, type AnchorMap } from './anchors';
+import { ANCHOR_BY_RULE, type AnchorId, type AnchorMap } from './anchors';
 import type { Translation } from './i18n';
 import { errorsIn, type Finding } from './validate';
 
@@ -19,8 +19,8 @@ export function ValidationBadge({
   currency: string;
   /** The blocks the rendered document turned out to have, keyed by anchor. */
   anchors: AnchorMap;
-  highlight: Anchor | null;
-  onHighlight: (anchor: Anchor | null) => void;
+  highlight: AnchorId | null;
+  onHighlight: (anchor: AnchorId | null) => void;
   t: Translation;
 }) {
   const [open, setOpen] = useState(false);
@@ -39,17 +39,17 @@ export function ValidationBadge({
 
   if (findings.length === 0) {
     return (
-      <span className={`badge ${state}`} title={t.checks}>
+      <span className={`pv-root pv-badge pv-${state}`} title={t.checks}>
         {label}
       </span>
     );
   }
 
   return (
-    <div className="validation">
+    <div className="pv-root pv-validation">
       <button
         type="button"
-        className={`badge ${state}`}
+        className={`pv-badge pv-${state}`}
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
@@ -58,7 +58,7 @@ export function ValidationBadge({
       </button>
 
       {open && (
-        <ul className="findings" id={panelId}>
+        <ul className="pv-findings" id={panelId}>
           {findings.map((finding, index) => {
             /*
               Which block of the page the rule is about — but only one the document
@@ -71,8 +71,8 @@ export function ValidationBadge({
 
             const detail = (
               <>
-                <span className="rule-id">{finding.rule}</span>
-                <span className="rule-text">
+                <span className="pv-rule-id">{finding.rule}</span>
+                <span className="pv-rule-text">
                   {t.rules[finding.key] ?? finding.key}
                   {finding.vat && (
                     <em>
@@ -83,7 +83,7 @@ export function ValidationBadge({
                   )}
                 </span>
                 {finding.expected !== undefined && finding.found !== undefined && (
-                  <span className="rule-numbers">
+                  <span className="pv-rule-numbers">
                     {t.ruleExpected} {t.money(finding.expected, currency)} · {t.ruleStated}{' '}
                     {t.money(finding.found, currency)}
                   </span>
@@ -92,11 +92,11 @@ export function ValidationBadge({
             );
 
             return (
-              <li key={`${finding.rule}-${index}`} className={finding.severity}>
+              <li key={`${finding.rule}-${index}`} className={`pv-${finding.severity}`}>
                 {anchor ? (
                   <button
                     type="button"
-                    className="finding"
+                    className="pv-finding"
                     onClick={() => {
                       // Pressing the lit row again puts the page back the way it was.
                       onHighlight(highlight === anchor ? null : anchor);
@@ -111,7 +111,7 @@ export function ValidationBadge({
                     {detail}
                   </button>
                 ) : (
-                  <div className="finding">{detail}</div>
+                  <div className="pv-finding">{detail}</div>
                 )}
               </li>
             );

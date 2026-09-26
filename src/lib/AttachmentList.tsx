@@ -19,7 +19,7 @@ export function AttachmentList({ invoice, t }: { invoice: UblDocument; t: Transl
   if (files.length === 0) return null;
 
   return (
-    <section className="attachments">
+    <section className="pv-root pv-attachments">
       <h3>{t.embeddedAttachments}</h3>
       <ul>
         {files.map((ref, index) => (
@@ -48,7 +48,7 @@ export function AttachmentList({ invoice, t }: { invoice: UblDocument; t: Transl
           </li>
         ))}
       </ul>
-      {failed !== null && <p className="error">{t.attachmentBroken(failed)}</p>}
+      {failed !== null && <p className="pv-error">{t.attachmentBroken(failed)}</p>}
     </section>
   );
 }

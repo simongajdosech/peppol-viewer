@@ -12,13 +12,13 @@ import {
 } from './qr';
 import { parseUbl, type UblDocument } from './ubl';
 
-const samples = import.meta.glob('../public/samples/*.xml', {
+const samples = import.meta.glob('../../public/samples/*.xml', {
   query: '?raw',
   import: 'default',
   eager: true,
 }) as Record<string, string>;
 
-const sample = (name: string) => parseUbl(samples[`../public/samples/${name}`]);
+const sample = (name: string) => parseUbl(samples[`../../public/samples/${name}`]);
 
 /** The one bundled document that earns both codes: a Slovak IBAN, a VS, and euro. */
 const slovak = () => sample('SK-full-example.xml');

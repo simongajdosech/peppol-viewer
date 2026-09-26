@@ -1,0 +1,383 @@
+/*
+ * Styles for the components this package exports.
+ *
+ * Two rules keep this safe to drop into somebody else's app:
+ *
+ * Every class is prefixed `pv-`, so nothing here can claim a host's `.toolbar` or
+ * `.badge`. The one exception is `.react-pdf__Document`, which react-pdf names itself —
+ * it is only ever reached through a `pv-` ancestor.
+ *
+ * Every colour comes from a `--pv-*` custom property defined right here, so the package
+ * looks right with no theme at all. A host that wants it to match sets those same
+ * properties on any ancestor and everything follows; nothing reads a host variable it
+ * cannot see.
+ *
+ * Each exported component puts `pv-root` on its outermost element, which is where the
+ * properties live — so they work whether the component is used inside the viewer or on
+ * its own.
+ */
+
+.pv-root {
+  --pv-text: #6b6375;
+  --pv-text-strong: #08060d;
+  --pv-bg: #fff;
+  --pv-border: #e5e4e7;
+  --pv-subtle-bg: #f4f3ec;
+  --pv-accent: #aa3bff;
+  --pv-accent-bg: rgba(170, 59, 255, 0.1);
+  --pv-brand: #1e4fa3;
+  --pv-on-brand: #fff;
+  --pv-pass: #2f9e5e;
+  --pv-warn: #b7791f;
+  --pv-fail: #e5484d;
+  /* The surround the paper sits on, which is deliberately dark in both schemes. */
+  --pv-desk: #33373f;
+  --pv-highlight: rgba(255, 213, 0, 0.45);
+  --pv-highlight-edge: rgba(214, 158, 0, 0.85);
+  --pv-shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --pv-mono: ui-monospace, Consolas, monospace;
+  --pv-radius: 8px;
+
+  color: var(--pv-text);
+  text-align: left;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pv-root {
+    --pv-text: #9ca3af;
+    --pv-text-strong: #f3f4f6;
+    --pv-bg: #16171d;
+    --pv-border: #2e303a;
+    --pv-subtle-bg: #1f2028;
+    --pv-accent: #c084fc;
+    --pv-accent-bg: rgba(192, 132, 252, 0.15);
+    --pv-shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  }
+}
+
+/*
+  Buttons are given a full box rather than inheriting one. A host's reset could have
+  stripped the user-agent border these used to rely on, and a package cannot assume
+  either way.
+*/
+.pv-root button {
+  border: 1px solid var(--pv-border);
+  border-radius: 6px;
+  background: var(--pv-bg);
+  color: inherit;
+  font: inherit;
+}
+
+/* ---------- embedded attachments ---------- */
+
+.pv-attachments {
+  margin-bottom: 1rem;
+}
+
+.pv-attachments h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.pv-attachments ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pv-attachments button {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pv-attachments button strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.pv-attachments button span {
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+/* ---------- the viewer ---------- */
+
+.pv-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.pv-zoom {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pv-zoom button {
+  width: 2rem;
+  padding: 0.25rem 0;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pv-zoom button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pv-zoom span {
+  min-width: 3.2rem;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.pv-status {
+  flex: 1;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.pv-qr-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.pv-qr-toggle input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.pv-download {
+  padding: 0.5rem 1rem;
+  border-radius: var(--pv-radius);
+  background: var(--pv-brand);
+  color: var(--pv-on-brand);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pv-download.pv-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ---------- validation ---------- */
+
+.pv-validation {
+  position: relative;
+}
+
+.pv-badge {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+button.pv-badge {
+  cursor: pointer;
+}
+
+.pv-badge.pv-pass {
+  border-color: rgba(47, 158, 94, 0.4);
+  background: rgba(47, 158, 94, 0.12);
+  color: var(--pv-pass);
+}
+
+.pv-badge.pv-warn {
+  border-color: rgba(183, 121, 31, 0.4);
+  background: rgba(183, 121, 31, 0.12);
+  color: var(--pv-warn);
+}
+
+.pv-badge.pv-fail {
+  border-color: rgba(229, 72, 77, 0.4);
+  background: rgba(229, 72, 77, 0.12);
+  color: var(--pv-fail);
+}
+
+/* The panel hangs off the badge so opening it does not push the page around. */
+.pv-findings {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: min(34rem, 80vw);
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.35rem;
+  border: 1px solid var(--pv-border);
+  border-radius: 10px;
+  background: var(--pv-bg);
+  box-shadow: var(--pv-shadow);
+  list-style: none;
+}
+
+.pv-findings li + li {
+  border-top: 1px solid var(--pv-border);
+}
+
+/*
+  One row of the panel: a button when the rule has a block on the page to point at, and a
+  plain block when it does not. The grid lives here rather than on the li so both read
+  identically whichever element it turns out to be.
+*/
+.pv-finding {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.15rem 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.pv-root button.pv-finding {
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.pv-root button.pv-finding:hover {
+  background: var(--pv-subtle-bg);
+}
+
+.pv-root button.pv-finding[aria-pressed='true'] {
+  background: var(--pv-accent-bg);
+  box-shadow: inset 2px 0 0 var(--pv-accent);
+}
+
+.pv-rule-id {
+  font-family: var(--pv-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.pv-findings li.pv-error .pv-rule-id {
+  color: var(--pv-fail);
+}
+
+.pv-findings li.pv-warning .pv-rule-id {
+  color: var(--pv-warn);
+}
+
+.pv-rule-text {
+  color: var(--pv-text-strong);
+}
+
+.pv-rule-text em {
+  font-style: normal;
+  opacity: 0.65;
+}
+
+.pv-rule-numbers {
+  grid-column: 2;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* ---------- the pages ---------- */
+
+.pv-scroll {
+  overflow-x: auto;
+  padding: 1.25rem;
+  border-radius: 10px;
+  background: var(--pv-desk);
+}
+
+.pv-scroll .react-pdf__Document {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pv-paper {
+  box-shadow: 0 6px 24px rgb(0 0 0 / 45%);
+}
+
+.pv-paper canvas {
+  display: block;
+}
+
+/*
+  The highlight over a block of the page.
+
+  It is a child of the <Page>, which positions itself, so these coordinates are the
+  page's own — scaled out of the PDF's points by `scaleRect`. z-index 2 clears the text
+  layer and its spans, which sit at 0 and 1; `multiply` tints the paper without washing
+  out the glyphs underneath; and taking no pointer events leaves the text selectable
+  through it.
+
+  Not `.highlight`: pdfjs uses that class for its own find-in-page highlights, inside the
+  text layer.
+*/
+.pv-highlight {
+  position: absolute;
+  z-index: 2;
+  border-radius: 2px;
+  background: var(--pv-highlight);
+  outline: 1.5px solid var(--pv-highlight-edge);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  animation: pv-highlight-in 140ms ease-out;
+}
+
+@keyframes pv-highlight-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-highlight {
+    animation: none;
+  }
+}
+
+/* ---------- messages ---------- */
+
+.pv-error {
+  color: var(--pv-fail);
+  font-size: 0.85rem;
+}
+
+.pv-muted {
+  opacity: 0.6;
+  font-size: 0.85rem;
+}

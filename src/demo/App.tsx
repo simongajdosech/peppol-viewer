@@ -1,19 +1,22 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { AttachmentList } from './AttachmentList';
+import { AttachmentList, LOCALES, parseUbl, translation, type Locale, type UblDocument } from '..';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { SAMPLES } from './samples';
-import { parseUbl, type UblDocument } from './ubl';
 import { readViewState, viewStateHash, type ViewState } from './viewState';
-import { LOCALES, translation, type Locale } from './i18n';
-import './App.css';
+import './demo.css';
 
 /**
- * @react-pdf/renderer and react-pdf together are most of the bundle, and nothing
- * outside the document view needs either — the sidebar, the sample list and the XML
- * view render without them. Keeping them behind a dynamic import lets the shell paint
- * before that chunk has even been fetched.
+ * The demo consumes the package through its public entry, exactly as another project
+ * would — so anything missing from `src/index.ts` breaks here first.
+ *
+ * @react-pdf/renderer and react-pdf together are most of the bundle, and nothing outside
+ * the document view needs either — the sidebar, the sample list and the XML view render
+ * without them. Keeping the viewer behind a dynamic import lets the shell paint before
+ * that chunk has even been fetched. The rest of the package is small and eagerly
+ * imported above.
  */
-const loadPreview = () => import('./InvoicePreview');
-const InvoicePreview = lazy(() => loadPreview().then((m) => ({ default: m.InvoicePreview })));
+const loadPreview = () => import('../lib/PeppolViewer');
+const PeppolViewer = lazy(() => loadPreview().then((m) => ({ default: m.PeppolViewer })));
 
 type Source = { label: string; xml: string };
 
@@ -220,7 +223,16 @@ export default function App() {
         ) : (
           invoice && (
             <Suspense fallback={<p className="muted">{t.loadingDocument}</p>}>
-              <InvoicePreview key={source?.label} invoice={invoice} locale={locale} t={t} />
+              <PeppolViewer
+                key={source?.label}
+                document={invoice}
+                locale={locale}
+                fontsUrl={`${import.meta.env.BASE_URL}fonts/`}
+                workerSrc={workerSrc}
+                // The shell shows these above both views, so the viewer's own copy would
+                // be a duplicate of what is already on screen.
+                attachments={false}
+              />
             </Suspense>
           )
         )}

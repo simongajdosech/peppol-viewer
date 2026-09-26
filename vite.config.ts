@@ -4,6 +4,9 @@ import { defineConfig } from 'vitest/config'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // The demo, not the package: `dist/` belongs to the library build in
+  // vite.lib.config.ts, and the two would overwrite each other.
+  build: { outDir: 'dist-demo' },
   optimizeDeps: {
     // The PDF stack is reachable only through the dynamic import in App. The dev
     // server's cold scan does find it, but naming it here keeps it out of the

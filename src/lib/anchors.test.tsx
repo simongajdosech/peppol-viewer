@@ -5,39 +5,39 @@
 import { Font, renderToBuffer } from '@react-pdf/renderer';
 import { JSDOM } from 'jsdom';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { ANCHOR_BY_RULE, collectAnchors, scaleRect, type Anchor, type AnchorMap } from './anchors';
+import {
+  ANCHOR_BY_RULE,
+  BLOCK_ANCHORS,
+  BUSINESS_TERMS,
+  collectAnchors,
+  scaleRect,
+  type AnchorId,
+  type AnchorMap,
+} from './anchors';
 import { InvoiceDocument } from './InvoiceDocument';
 import { parseUbl, type UblDocument } from './ubl';
+import { translation } from './i18n';
 import { validate } from './validate';
 
 globalThis.DOMParser = new JSDOM().window.DOMParser;
 
-const samples = import.meta.glob('../public/samples/*.xml', {
+const samples = import.meta.glob('../../public/samples/*.xml', {
   query: '?raw',
   import: 'default',
   eager: true,
 }) as Record<string, string>;
 
-const sample = (name: string) => parseUbl(samples[`../public/samples/${name}`]);
+const sample = (name: string) => parseUbl(samples[`../../public/samples/${name}`]);
 
-const ALL_ANCHORS: Anchor[] = [
-  'header',
-  'supplier',
-  'customer',
-  'details',
-  'lines',
-  'totals',
-  'vat',
-  'payable',
-  'exemptions',
-  'payment',
-  'footer',
-];
+const isWellFormed = (id: string) =>
+  (BLOCK_ANCHORS as readonly string[]).includes(id) ||
+  /^line:[0-9]+$/.test(id) ||
+  /^bt-[0-9]+$/.test(id);
 
 type Rendered = {
   anchors: AnchorMap;
   /** The text of every glyph run whose origin falls inside the given anchor's boxes. */
-  textIn: (anchor: Anchor) => string;
+  textIn: (anchor: AnchorId) => string;
 };
 
 /**
@@ -115,7 +115,56 @@ describe('collectAnchors', () => {
   it('finds every block of a full document', async () => {
     const { anchors } = await render(sample('Norwegian-example-1.xml'));
 
-    expect(Object.keys(anchors).sort()).toEqual([...ALL_ANCHORS].sort());
+    expect(BLOCK_ANCHORS.filter((block) => !anchors[block])).toEqual([]);
+  });
+
+  it('anchors every line of the table by the position it was printed at', async () => {
+    const invoice = sample('Norwegian-example-1.xml');
+    const { anchors, textIn } = await render(invoice);
+
+    const found = Object.keys(anchors).filter((id) => id.startsWith('line:'));
+    expect(found).toHaveLength(invoice.lines.length);
+
+    // Each row covers its own item and nothing from its neighbours.
+    invoice.lines.forEach((line, index) => {
+      const text = textIn(`line:${index + 1}`);
+      expect(text).toContain(line.name);
+      for (const other of invoice.lines) {
+        if (other.name !== line.name) expect(text).not.toContain(other.name);
+      }
+    });
+  });
+
+  it('anchors the business terms it marks, where the document prints them', async () => {
+    const invoice = sample('SK-full-example.xml');
+    const { anchors, textIn } = await render(invoice);
+
+    expect(textIn('bt-1')).toContain(invoice.id);
+    expect(textIn('bt-27')).toContain(invoice.supplier.name);
+    expect(textIn('bt-44')).toContain(invoice.customer.name);
+    expect(textIn('bt-31')).toContain(invoice.supplier.vatId);
+    expect(textIn('bt-5')).toContain(invoice.currency);
+    // The amount due, which is the number a reader is most often sent to. Compared
+    // against the same formatter the document prints it with, separators and all.
+    const money = translation('en').money(invoice.totals.payable, invoice.currency);
+    expect(squash(textIn('bt-115'))).toContain(squash(money));
+    // BT-84 is the IBAN, printed in the payment band.
+    expect(squash(textIn('bt-84'))).toContain(squash(invoice.paymentMeans[0].account));
+
+    // Every marked term either landed somewhere or is absent from this document; none
+    // may resolve to a box the reader cannot see.
+    for (const id of Object.keys(anchors)) {
+      if (id.startsWith('bt-')) expect(BUSINESS_TERMS).toHaveProperty(id);
+    }
+  });
+
+  it('leaves out a term the document does not print', async () => {
+    // No tax point date and no contract reference on the base invoice.
+    const { anchors } = await render(sample('base-example.xml'));
+
+    expect(anchors['bt-7']).toBeUndefined();
+    expect(anchors['bt-12']).toBeUndefined();
+    expect(anchors['bt-1']).toBeDefined();
   });
 
   it('puts each anchor over the text it is meant to cover', async () => {
@@ -169,7 +218,7 @@ describe('collectAnchors', () => {
     const { anchors } = await render(sample('Norwegian-example-1.xml'));
 
     for (const rects of Object.values(anchors)) {
-      for (const rect of rects) {
+      for (const rect of rects ?? []) {
         expect(rect.x).toBeGreaterThanOrEqual(0);
         expect(rect.y).toBeGreaterThanOrEqual(0);
         expect(rect.x + rect.width).toBeLessThanOrEqual(rect.pageWidth + 0.01);
@@ -210,9 +259,24 @@ describe('ANCHOR_BY_RULE', () => {
     expect([...keys].filter((key) => !ANCHOR_BY_RULE[key])).toEqual([]);
   });
 
-  it('points only at blocks the document can produce', () => {
+  it('points only at well-formed anchors', () => {
     for (const anchor of Object.values(ANCHOR_BY_RULE)) {
-      expect(ALL_ANCHORS).toContain(anchor);
+      expect(isWellFormed(anchor)).toBe(true);
     }
+  });
+
+  it('points only at anchors the document actually produces', async () => {
+    // Union of everything the corpus renders. A rule pointing outside it would send the
+    // reader nowhere, which the panel hides — silently, and so worth catching here.
+    const rendered = new Set<string>();
+    for (const xml of Object.values(samples)) {
+      const { anchors } = await render(parseUbl(xml));
+      for (const id of Object.keys(anchors)) rendered.add(id);
+    }
+
+    const unreachable = [...new Set(Object.values(ANCHOR_BY_RULE))].filter(
+      (anchor) => !rendered.has(anchor),
+    );
+    expect(unreachable).toEqual([]);
   });
 });

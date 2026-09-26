@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Document, Page, Path, Rect, StyleSheet, Svg, Text, View } from '@react-pdf/renderer';
-import { layoutOf, type Anchor, type LayoutNode } from './anchors';
+import { layoutOf, type AnchorId, type BlockAnchor, type LayoutNode, type TermAnchor } from './anchors';
 import { PDF_FONT } from './fonts';
 import { translation, type Locale, type Translation } from './i18n';
 import { paymentQrs, qrMatrix, type PaymentQrKind } from './qr';
@@ -194,12 +194,15 @@ function Columns({ slots }: { slots: (ReactNode | null)[] }) {
 
 function PartyBlock({
   id,
+  terms,
   label,
   party,
   t,
 }: {
   /** Set on the two parties a business rule can complain about. */
-  id?: Anchor;
+  id?: BlockAnchor;
+  /** The business terms this party's name and identifiers carry, when it has them. */
+  terms?: { name: TermAnchor; legalId: TermAnchor; vatId: TermAnchor; endpoint: TermAnchor };
   label: string;
   party: Party;
   t: Translation;
@@ -207,40 +210,42 @@ function PartyBlock({
   const endpoint = party.endpointId
     ? join([party.endpointScheme, party.endpointId], ':')
     : '';
-  const identifiers = [
-    party.legalName && party.legalName !== party.name ? party.legalName : '',
-    party.vatId && `${t.vatId} ${party.vatId}`,
-    party.companyId && `${t.companyId} ${party.companyId}`,
-    party.taxRegistration && `${t.taxRegistration} ${party.taxRegistration}`,
-    party.legalForm && `${t.legalForm} ${party.legalForm}`,
+  const identifiers: { anchor?: TermAnchor; text: string }[] = [
+    { text: party.legalName && party.legalName !== party.name ? party.legalName : '' },
+    { anchor: terms?.vatId, text: party.vatId ? `${t.vatId} ${party.vatId}` : '' },
+    { anchor: terms?.legalId, text: party.companyId ? `${t.companyId} ${party.companyId}` : '' },
+    { text: party.taxRegistration ? `${t.taxRegistration} ${party.taxRegistration}` : '' },
+    { text: party.legalForm ? `${t.legalForm} ${party.legalForm}` : '' },
     // A party identifier that just repeats the Peppol endpoint adds no information.
     ...party.identifiers
       .filter((id) => id !== endpoint)
-      .map((id) => `${t.partyId} ${id}`),
-    endpoint && `Peppol ${endpoint}`,
-    join([party.contactName, party.phone, party.email]),
-  ].filter(Boolean);
+      .map((id) => ({ text: `${t.partyId} ${id}` })),
+    { anchor: terms?.endpoint, text: endpoint ? `Peppol ${endpoint}` : '' },
+    { text: join([party.contactName, party.phone, party.email]) },
+  ].filter((entry) => entry.text);
 
   return (
     <View id={id}>
       <Text style={styles.sectionTitle}>{label}</Text>
-      <Text style={styles.partyName}>{party.name || '—'}</Text>
+      <Text id={terms?.name} style={styles.partyName}>
+        {party.name || '—'}
+      </Text>
       {t.address(party.address).map((line) => (
         <Text key={line}>{line}</Text>
       ))}
       {identifiers.map((line) => (
-        <Text key={line} style={styles.muted}>
-          {line}
+        <Text key={line.text} id={line.anchor} style={styles.muted}>
+          {line.text}
         </Text>
       ))}
     </View>
   );
 }
 
-function MetaRow({ label, value }: { label: string; value: string }) {
+function MetaRow({ id, label, value }: { id?: AnchorId; label: string; value: string }) {
   if (!value) return null;
   return (
-    <View style={styles.metaRow}>
+    <View id={id} style={styles.metaRow}>
       <Text style={styles.metaLabel}>{label}</Text>
       <Text style={styles.metaValue}>{value}</Text>
     </View>
@@ -248,16 +253,18 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 }
 
 function TotalRow({
+  id,
   label,
   value,
   divider = false,
 }: {
+  id?: AnchorId;
   label: string;
   value: string;
   divider?: boolean;
 }) {
   return (
-    <View style={[styles.totalRow, ...(divider ? [styles.totalDivider] : [])]}>
+    <View id={id} style={[styles.totalRow, ...(divider ? [styles.totalDivider] : [])]}>
       <Text style={styles.totalLabel}>{label}</Text>
       <Text>{value}</Text>
     </View>
@@ -411,7 +418,9 @@ export function InvoiceDocument({
           <Text style={styles.title}>{title}</Text>
           <View>
             <Text style={styles.docNumberLabel}>{t.documentNo}</Text>
-            <Text style={styles.docNumber}>{invoice.id || '—'}</Text>
+            <Text id="bt-1" style={styles.docNumber}>
+              {invoice.id || '—'}
+            </Text>
           </View>
         </View>
 
@@ -420,6 +429,7 @@ export function InvoiceDocument({
             <PartyBlock
               key="supplier"
               id="supplier"
+              terms={{ name: 'bt-27', legalId: 'bt-30', vatId: 'bt-31', endpoint: 'bt-34' }}
               label={t.supplier}
               party={invoice.supplier}
               t={t}
@@ -427,24 +437,25 @@ export function InvoiceDocument({
             <PartyBlock
               key="customer"
               id="customer"
+              terms={{ name: 'bt-44', legalId: 'bt-47', vatId: 'bt-48', endpoint: 'bt-49' }}
               label={invoice.isCreditNote ? t.creditTo : t.billTo}
               party={invoice.customer}
               t={t}
             />,
             <View key="details" id="details">
               <Text style={styles.sectionTitle}>{t.details}</Text>
-              <MetaRow label={t.issued} value={t.date(invoice.issueDate)} />
-              <MetaRow label={t.due} value={t.date(invoice.dueDate)} />
+              <MetaRow id="bt-2" label={t.issued} value={t.date(invoice.issueDate)} />
+              <MetaRow id="bt-9" label={t.due} value={t.date(invoice.dueDate)} />
               <MetaRow label={t.delivered} value={t.date(delivery?.date ?? '')} />
-              <MetaRow label={t.taxPoint} value={t.date(invoice.taxPointDate)} />
+              <MetaRow id="bt-7" label={t.taxPoint} value={t.date(invoice.taxPointDate)} />
               <MetaRow label={t.period} value={period} />
-              <MetaRow label={t.currency} value={invoice.currency} />
-              <MetaRow label={t.taxCurrency} value={invoice.taxCurrency} />
-              <MetaRow label={t.typeCode} value={t.documentType(invoice.typeCode)} />
-              <MetaRow label={t.buyerRef} value={invoice.buyerReference} />
-              <MetaRow label={t.orderRef} value={invoice.orderReference} />
+              <MetaRow id="bt-5" label={t.currency} value={invoice.currency} />
+              <MetaRow id="bt-6" label={t.taxCurrency} value={invoice.taxCurrency} />
+              <MetaRow id="bt-3" label={t.typeCode} value={t.documentType(invoice.typeCode)} />
+              <MetaRow id="bt-10" label={t.buyerRef} value={invoice.buyerReference} />
+              <MetaRow id="bt-13" label={t.orderRef} value={invoice.orderReference} />
               <MetaRow label={t.salesOrderRef} value={invoice.salesOrderReference} />
-              <MetaRow label={t.contract} value={invoice.contractReference} />
+              <MetaRow id="bt-12" label={t.contract} value={invoice.contractReference} />
               <MetaRow label={t.project} value={invoice.projectReference} />
               <MetaRow label={t.despatchAdvice} value={invoice.despatchReference} />
               <MetaRow label={t.receiptAdvice} value={invoice.receiptReference} />
@@ -480,7 +491,14 @@ export function InvoiceDocument({
             were children of the page. */}
         <View id="lines">
           {invoice.lines.map((line, index) => (
-            <View key={line.id || index} style={styles.row} wrap={false}>
+            // Anchored by position printed, not by BT-126: a line id is optional in the
+            // document and need not be a number, but `line:2` is always the second row.
+            <View
+              key={line.id || index}
+              id={`line:${index + 1}`}
+              style={styles.row}
+              wrap={false}
+            >
               <Text style={styles.colNo}>{line.id || index + 1}</Text>
               <View style={styles.colItem}>
                 <Text>{line.name || '—'}</Text>
@@ -519,15 +537,16 @@ export function InvoiceDocument({
 
         <View style={styles.totalsWrap} wrap={false}>
           <View id="totals" style={styles.totals}>
-            <TotalRow label={t.sumOfLines} value={money(totals.lineExtension)} />
+            <TotalRow id="bt-106" label={t.sumOfLines} value={money(totals.lineExtension)} />
             {invoice.allowanceCharges.map((ac, index) => (
               <TotalRow
                 key={`${ac.reason}-${index}`}
+                id={ac.isCharge ? 'bt-108' : 'bt-107'}
                 label={allowanceLabel(ac, t, currency)}
                 value={money(ac.isCharge ? ac.amount : -ac.amount)}
               />
             ))}
-            <TotalRow label={t.totalExclVat} value={money(totals.taxExclusive)} divider />
+            <TotalRow id="bt-109" label={t.totalExclVat} value={money(totals.taxExclusive)} divider />
             <View id="vat">
               {invoice.taxSubtotals.map((tax, index) => (
                 <TotalRow
@@ -543,20 +562,26 @@ export function InvoiceDocument({
                 />
               ))}
             </View>
-            <TotalRow label={t.totalInclVat} value={money(totals.taxInclusive)} divider />
+            <TotalRow id="bt-112" label={t.totalInclVat} value={money(totals.taxInclusive)} divider />
             {invoice.taxAmountInTaxCurrency !== null && (
               <TotalRow
                 label={t.vatIn(invoice.taxCurrency)}
                 value={t.money(invoice.taxAmountInTaxCurrency, invoice.taxCurrency)}
               />
             )}
-            {totals.prepaid !== 0 && <TotalRow label={t.prepaid} value={money(-totals.prepaid)} />}
-            {totals.rounding !== 0 && <TotalRow label={t.rounding} value={money(totals.rounding)} />}
+            {totals.prepaid !== 0 && (
+              <TotalRow id="bt-113" label={t.prepaid} value={money(-totals.prepaid)} />
+            )}
+            {totals.rounding !== 0 && (
+              <TotalRow id="bt-114" label={t.rounding} value={money(totals.rounding)} />
+            )}
             <View id="payable" style={styles.payableRow}>
               <Text style={styles.payableLabel}>
                 {t.amountDue} ({currency})
               </Text>
-              <Text style={styles.payableValue}>{money(totals.payable)}</Text>
+              <Text id="bt-115" style={styles.payableValue}>
+                {money(totals.payable)}
+              </Text>
             </View>
           </View>
         </View>
@@ -580,7 +605,7 @@ export function InvoiceDocument({
                 {invoice.paymentMeans.map((pm, index) => (
                   <View key={index}>
                     {!!pm.account && (
-                      <Text>
+                      <Text id="bt-84">
                         <Text style={styles.bold}>{t.account} </Text>
                         {join([pm.account, pm.bic && `BIC ${pm.bic}`, pm.accountName])}
                       </Text>

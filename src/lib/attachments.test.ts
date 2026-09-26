@@ -8,13 +8,13 @@ import {
 } from './attachments';
 import { parseUbl } from './ubl';
 
-const samples = import.meta.glob('../public/samples/*.xml', {
+const samples = import.meta.glob('../../public/samples/*.xml', {
   query: '?raw',
   import: 'default',
   eager: true,
 }) as Record<string, string>;
 
-const sample = (name: string) => parseUbl(samples[`../public/samples/${name}`]);
+const sample = (name: string) => parseUbl(samples[`../../public/samples/${name}`]);
 
 const text = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
 
@@ -111,7 +111,7 @@ describe('the parsed document', () => {
   });
 
   it('un-wraps base64 a writer split across lines, which atob would reject', () => {
-    const wrapped = samples['../public/samples/Norwegian-example-1.xml'].replace(
+    const wrapped = samples['../../public/samples/Norwegian-example-1.xml'].replace(
       'VGVzdCBiYXNlIDY0IGVuY29kaW5n',
       'VGVzdCBiYXNl\n\t\tIDY0IGVuY29k\n\t\taW5n',
     );

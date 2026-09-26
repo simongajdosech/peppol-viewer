@@ -1,23 +1,55 @@
 {
   "name": "peppol-viewer",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Renders Peppol BIS Billing 3.0 (UBL) invoices and credit notes to PDF in the browser, with validation, payment QR codes, embedded attachments and flicker-free highlighting.",
+  "keywords": [
+    "peppol",
+    "ubl",
+    "invoice",
+    "e-invoicing",
+    "en16931",
+    "pdf",
+    "react"
+  ],
   "type": "module",
+  "license": "LGPL-3.0-or-later",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./fonts/*": "./fonts/*",
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "fonts",
+    "COPYING.GPL-3.0"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json",
+    "build:demo": "tsc -b && vite build",
+    "prepack": "npm run build && node scripts/copy-fonts.mjs",
     "lint": "oxlint",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
     "bysquare": "^4.0.2",
     "pdfjs-dist": "6.3.289",
     "qrcode-generator": "^2.0.4",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
     "react-pdf": "^11.0.0"
   },
   "devDependencies": {
@@ -28,6 +60,8 @@
     "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^29.1.1",
     "oxlint": "^1.81.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.1"

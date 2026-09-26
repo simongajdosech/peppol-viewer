@@ -11,13 +11,13 @@ import { parseUbl, type UblDocument } from './ubl';
 
 globalThis.DOMParser = new JSDOM().window.DOMParser;
 
-const samples = import.meta.glob('../public/samples/*.xml', {
+const samples = import.meta.glob('../../public/samples/*.xml', {
   query: '?raw',
   import: 'default',
   eager: true,
 }) as Record<string, string>;
 
-const sample = (name: string) => parseUbl(samples[`../public/samples/${name}`]);
+const sample = (name: string) => parseUbl(samples[`../../public/samples/${name}`]);
 
 /** Renders the document and reads the text back out, one entry per page. */
 async function render(

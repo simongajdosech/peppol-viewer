@@ -5,7 +5,7 @@ import { errorsIn, validate } from './validate';
 
 const samples = Object.fromEntries(
   Object.entries(
-    import.meta.glob('../public/samples/*.xml', {
+    import.meta.glob('../../public/samples/*.xml', {
       query: '?raw',
       import: 'default',
       eager: true,

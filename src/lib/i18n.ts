@@ -128,6 +128,9 @@ export type Strings = {
   ruleExpected: string;
   ruleStated: string;
   showOnPage: string;
+  zoomIn: string;
+  zoomOut: string;
+  openFailed: string;
 };
 
 const en: Strings = {
@@ -342,6 +345,9 @@ const en: Strings = {
   ruleExpected: 'expected',
   ruleStated: 'document states',
   showOnPage: 'Show on the page',
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
+  openFailed: 'Failed to open the generated PDF.',
 };
 
 const sk: Strings = {
@@ -560,6 +566,9 @@ const sk: Strings = {
   ruleExpected: 'očakávané',
   ruleStated: 'doklad uvádza',
   showOnPage: 'Zobraziť na strane',
+  zoomIn: 'Priblížiť',
+  zoomOut: 'Oddialiť',
+  openFailed: 'Vygenerovaný PDF sa nepodarilo otvoriť.',
 };
 
 const DICT: Record<Locale, Strings> = { en, sk };
