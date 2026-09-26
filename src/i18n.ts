@@ -127,6 +127,7 @@ export type Strings = {
   checksAdvisory: (warnings: number) => string;
   ruleExpected: string;
   ruleStated: string;
+  showOnPage: string;
 };
 
 const en: Strings = {
@@ -340,6 +341,7 @@ const en: Strings = {
   checksAdvisory: (warnings) => `${warnings} to look at`,
   ruleExpected: 'expected',
   ruleStated: 'document states',
+  showOnPage: 'Show on the page',
 };
 
 const sk: Strings = {
@@ -557,6 +559,7 @@ const sk: Strings = {
   checksAdvisory: (warnings) => `${warnings} na pozretie`,
   ruleExpected: 'očakávané',
   ruleStated: 'doklad uvádza',
+  showOnPage: 'Zobraziť na strane',
 };
 
 const DICT: Record<Locale, Strings> = { en, sk };

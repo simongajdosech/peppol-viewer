@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Document, Page, Path, Rect, StyleSheet, Svg, Text, View } from '@react-pdf/renderer';
+import { layoutOf, type Anchor, type LayoutNode } from './anchors';
 import { PDF_FONT } from './fonts';
 import { translation, type Locale, type Translation } from './i18n';
 import { paymentQrs, qrMatrix, type PaymentQrKind } from './qr';
@@ -192,10 +193,13 @@ function Columns({ slots }: { slots: (ReactNode | null)[] }) {
 }
 
 function PartyBlock({
+  id,
   label,
   party,
   t,
 }: {
+  /** Set on the two parties a business rule can complain about. */
+  id?: Anchor;
   label: string;
   party: Party;
   t: Translation;
@@ -218,7 +222,7 @@ function PartyBlock({
   ].filter(Boolean);
 
   return (
-    <View>
+    <View id={id}>
       <Text style={styles.sectionTitle}>{label}</Text>
       <Text style={styles.partyName}>{party.name || '—'}</Text>
       {t.address(party.address).map((line) => (
@@ -330,11 +334,21 @@ export function InvoiceDocument({
   invoice,
   locale,
   showQr = true,
+  onLayout,
 }: {
   invoice: UblDocument;
   locale: Locale;
   /** Draw the payment QR codes in the payment band. Off puts nothing in their place. */
   showQr?: boolean;
+  /**
+   * Called with the laid-out tree once the document has been rendered, which is how the
+   * viewer learns where the blocks marked with `id` ended up. See `anchors.ts`.
+   *
+   * Must be stable: `usePDF` keeps the element it was last handed and reads this off it
+   * at render time, so a fresh function per parent render would be read back long after
+   * the render that created it.
+   */
+  onLayout?: (layout: LayoutNode) => void;
 }) {
   const t = translation(locale);
   const { totals, currency, delivery } = invoice;
@@ -384,9 +398,16 @@ export function InvoiceDocument({
       author={invoice.supplier.name}
       subject={`Peppol BIS Billing 3.0 · ${title}`}
       language={locale}
+      onRender={
+        onLayout &&
+        ((params) => {
+          const layout = layoutOf(params);
+          if (layout) onLayout(layout);
+        })
+      }
     >
       <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
+        <View id="header" style={styles.header}>
           <Text style={styles.title}>{title}</Text>
           <View>
             <Text style={styles.docNumberLabel}>{t.documentNo}</Text>
@@ -396,14 +417,21 @@ export function InvoiceDocument({
 
         <Columns
           slots={[
-            <PartyBlock key="supplier" label={t.supplier} party={invoice.supplier} t={t} />,
+            <PartyBlock
+              key="supplier"
+              id="supplier"
+              label={t.supplier}
+              party={invoice.supplier}
+              t={t}
+            />,
             <PartyBlock
               key="customer"
+              id="customer"
               label={invoice.isCreditNote ? t.creditTo : t.billTo}
               party={invoice.customer}
               t={t}
             />,
-            <View key="details">
+            <View key="details" id="details">
               <Text style={styles.sectionTitle}>{t.details}</Text>
               <MetaRow label={t.issued} value={t.date(invoice.issueDate)} />
               <MetaRow label={t.due} value={t.date(invoice.dueDate)} />
@@ -447,45 +475,50 @@ export function InvoiceDocument({
           <Text style={[styles.headCell, styles.colAmount]}>{t.colAmount}</Text>
         </View>
 
-        {invoice.lines.map((line, index) => (
-          <View key={line.id || index} style={styles.row} wrap={false}>
-            <Text style={styles.colNo}>{line.id || index + 1}</Text>
-            <View style={styles.colItem}>
-              <Text>{line.name || '—'}</Text>
-              {lineDetails(line, t, currency).map((detail) => (
-                <Text key={detail} style={styles.detail}>
-                  {detail}
-                </Text>
-              ))}
-              {line.allowanceCharges.map((ac, acIndex) => (
-                <Text key={`${ac.reason}-${acIndex}`} style={styles.detail}>
-                  {join([
-                    allowanceLabel(ac, t, currency),
-                    money(ac.isCharge ? ac.amount : -ac.amount),
-                  ])}
-                </Text>
-              ))}
+        {/* The wrapper exists only to be anchored. It carries no style, and wraps by
+            default, so the rows still break across pages exactly as they did when they
+            were children of the page. */}
+        <View id="lines">
+          {invoice.lines.map((line, index) => (
+            <View key={line.id || index} style={styles.row} wrap={false}>
+              <Text style={styles.colNo}>{line.id || index + 1}</Text>
+              <View style={styles.colItem}>
+                <Text>{line.name || '—'}</Text>
+                {lineDetails(line, t, currency).map((detail) => (
+                  <Text key={detail} style={styles.detail}>
+                    {detail}
+                  </Text>
+                ))}
+                {line.allowanceCharges.map((ac, acIndex) => (
+                  <Text key={`${ac.reason}-${acIndex}`} style={styles.detail}>
+                    {join([
+                      allowanceLabel(ac, t, currency),
+                      money(ac.isCharge ? ac.amount : -ac.amount),
+                    ])}
+                  </Text>
+                ))}
+              </View>
+              <Text style={styles.colQty}>
+                {join([t.quantity(line.quantity), t.unit(line.unitCode)], ' ')}
+              </Text>
+              <View style={styles.colPrice}>
+                <Text>{money(line.unitPrice)}</Text>
+                {line.baseQuantity !== 1 && (
+                  <Text style={styles.detail}>
+                    {t.pricePer(t.quantity(line.baseQuantity), t.unit(line.baseQuantityUnit))}
+                  </Text>
+                )}
+              </View>
+              <Text style={styles.colVat}>
+                {join([line.taxCategory, line.taxPercent ? t.percent(line.taxPercent) : ''], ' ')}
+              </Text>
+              <Text style={styles.colAmount}>{money(line.amount)}</Text>
             </View>
-            <Text style={styles.colQty}>
-              {join([t.quantity(line.quantity), t.unit(line.unitCode)], ' ')}
-            </Text>
-            <View style={styles.colPrice}>
-              <Text>{money(line.unitPrice)}</Text>
-              {line.baseQuantity !== 1 && (
-                <Text style={styles.detail}>
-                  {t.pricePer(t.quantity(line.baseQuantity), t.unit(line.baseQuantityUnit))}
-                </Text>
-              )}
-            </View>
-            <Text style={styles.colVat}>
-              {join([line.taxCategory, line.taxPercent ? t.percent(line.taxPercent) : ''], ' ')}
-            </Text>
-            <Text style={styles.colAmount}>{money(line.amount)}</Text>
-          </View>
-        ))}
+          ))}
+        </View>
 
         <View style={styles.totalsWrap} wrap={false}>
-          <View style={styles.totals}>
+          <View id="totals" style={styles.totals}>
             <TotalRow label={t.sumOfLines} value={money(totals.lineExtension)} />
             {invoice.allowanceCharges.map((ac, index) => (
               <TotalRow
@@ -495,19 +528,21 @@ export function InvoiceDocument({
               />
             ))}
             <TotalRow label={t.totalExclVat} value={money(totals.taxExclusive)} divider />
-            {invoice.taxSubtotals.map((tax, index) => (
-              <TotalRow
-                key={`${tax.category}-${index}`}
-                label={t.vatOn(
-                  // The narrow VAT column in the line table keeps the bare code; this
-                  // is the one place with room to say what that code means.
-                  t.vatCategory(tax.category),
-                  tax.percent ? t.percent(tax.percent) : '',
-                  money(tax.taxableAmount),
-                )}
-                value={money(tax.taxAmount)}
-              />
-            ))}
+            <View id="vat">
+              {invoice.taxSubtotals.map((tax, index) => (
+                <TotalRow
+                  key={`${tax.category}-${index}`}
+                  label={t.vatOn(
+                    // The narrow VAT column in the line table keeps the bare code; this
+                    // is the one place with room to say what that code means.
+                    t.vatCategory(tax.category),
+                    tax.percent ? t.percent(tax.percent) : '',
+                    money(tax.taxableAmount),
+                  )}
+                  value={money(tax.taxAmount)}
+                />
+              ))}
+            </View>
             <TotalRow label={t.totalInclVat} value={money(totals.taxInclusive)} divider />
             {invoice.taxAmountInTaxCurrency !== null && (
               <TotalRow
@@ -517,7 +552,7 @@ export function InvoiceDocument({
             )}
             {totals.prepaid !== 0 && <TotalRow label={t.prepaid} value={money(-totals.prepaid)} />}
             {totals.rounding !== 0 && <TotalRow label={t.rounding} value={money(totals.rounding)} />}
-            <View style={styles.payableRow}>
+            <View id="payable" style={styles.payableRow}>
               <Text style={styles.payableLabel}>
                 {t.amountDue} ({currency})
               </Text>
@@ -527,7 +562,7 @@ export function InvoiceDocument({
         </View>
 
         {exemptions.length > 0 && (
-          <View style={styles.band} wrap={false}>
+          <View id="exemptions" style={styles.band} wrap={false}>
             <Text style={styles.sectionTitle}>{t.vatExemption}</Text>
             {exemptions.map((tax, index) => (
               <Text key={index}>
@@ -538,7 +573,7 @@ export function InvoiceDocument({
         )}
 
         {(invoice.paymentMeans.length > 0 || invoice.paymentTerms.length > 0) && (
-          <View style={styles.band} wrap={false}>
+          <View id="payment" style={styles.band} wrap={false}>
             <Text style={styles.sectionTitle}>{t.payment}</Text>
             <View style={styles.paymentRow}>
               <View style={styles.paymentDetails}>
@@ -633,7 +668,7 @@ export function InvoiceDocument({
           4.9.0 drops from the page — anywhere in the document, fixed or not. The
           viewer reports the page count instead.
         */}
-        <View style={styles.footer} fixed>
+        <View id="footer" style={styles.footer} fixed>
           <View style={styles.footerMain}>
             <Text>{join([title, invoice.id], ' · ')}</Text>
             <Text>{invoice.supplier.name}</Text>

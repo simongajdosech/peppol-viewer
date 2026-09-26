@@ -1,7 +1,14 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { usePDF } from '@react-pdf/renderer';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
+import {
+  collectAnchors,
+  scaleRect,
+  type Anchor,
+  type AnchorMap,
+  type LayoutNode,
+} from './anchors';
 import { InvoiceDocument } from './InvoiceDocument';
 import { ValidationBadge } from './Validation';
 import { registerPdfFonts } from './fonts';
@@ -44,9 +51,27 @@ export function InvoicePreview({
   const [zoomIndex, setZoomIndex] = useState(3);
   const [showQr, setShowQr] = useState(true);
   const qrToggleId = useId();
+  const scroller = useRef<HTMLDivElement>(null);
+
+  /**
+   * Where the document's blocks landed, and which of them is lit up.
+   *
+   * The highlight is drawn over the page rather than rendered into it, so moving it costs
+   * one React render of a couple of divs — the PDF, the blob url and every canvas stay
+   * exactly as they were. Rendering it into the document would mean new bytes, and
+   * react-pdf blanks the entire viewer while it loads a new file. See `anchors.ts`.
+   */
+  const [anchors, setAnchors] = useState<AnchorMap>({});
+  const [highlight, setHighlight] = useState<Anchor | null>(null);
+
+  // Stable, because `usePDF` reads this back off the element it was last handed, long
+  // after the render that passed it in.
+  const onLayout = useCallback((layout: LayoutNode) => setAnchors(collectAnchors(layout)), []);
 
   const [instance, update] = usePDF({
-    document: <InvoiceDocument invoice={invoice} locale={locale} showQr={showQr} />,
+    document: (
+      <InvoiceDocument invoice={invoice} locale={locale} showQr={showQr} onLayout={onLayout} />
+    ),
   });
 
   // Both pure and cheap, but they only change when a new file is loaded.
@@ -74,8 +99,31 @@ export function InvoicePreview({
     }
 
     renderedFrom.current = { invoice, locale, showQr };
-    update(<InvoiceDocument invoice={invoice} locale={locale} showQr={showQr} />);
-  }, [invoice, locale, showQr, update]);
+    update(
+      <InvoiceDocument invoice={invoice} locale={locale} showQr={showQr} onLayout={onLayout} />,
+    );
+  }, [invoice, locale, showQr, update, onLayout]);
+
+  /**
+   * Brings a new highlight into view, which is the point of it on a document whose totals
+   * sit a page below the fold.
+   *
+   * `pageCount` is a dependency because the pages have to exist before there is anything
+   * to scroll to: a re-render of the document remounts them, and the box the reader was
+   * sent to goes with them.
+   */
+  useEffect(() => {
+    if (!highlight) return;
+
+    const box = scroller.current?.querySelector('.anchor-highlight');
+    box?.scrollIntoView({
+      block: 'center',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    });
+  }, [highlight, pageCount]);
+
+  const pageWidth = BASE_WIDTH * ZOOM_STEPS[zoomIndex];
+  const highlighted = (highlight && anchors[highlight]) || [];
 
   const kind = invoice.isCreditNote ? 'creditnote' : 'invoice';
   const filename = `${kind}-${invoice.id || 'document'}-${locale}.pdf`;
@@ -123,7 +171,14 @@ export function InvoicePreview({
           </label>
         )}
 
-        <ValidationBadge findings={findings} currency={invoice.currency} t={t} />
+        <ValidationBadge
+          findings={findings}
+          currency={invoice.currency}
+          anchors={anchors}
+          highlight={highlight}
+          onHighlight={setHighlight}
+          t={t}
+        />
 
         {instance.url && !instance.loading ? (
           <a className="download" href={instance.url} download={filename}>
@@ -134,7 +189,7 @@ export function InvoicePreview({
         )}
       </div>
 
-      <div className="paper-scroll">
+      <div className="paper-scroll" ref={scroller}>
         {instance.url && (
           <Document
             file={instance.url}
@@ -152,10 +207,28 @@ export function InvoicePreview({
               <Page
                 key={i}
                 pageNumber={i + 1}
-                width={BASE_WIDTH * ZOOM_STEPS[zoomIndex]}
+                width={pageWidth}
                 renderAnnotationLayer={false}
                 className="paper"
-              />
+              >
+                {/*
+                  The highlight. A <Page> renders its children over its own layers, and
+                  positions itself, so these are absolute boxes in the page's own space —
+                  scaled from points to the width the page is drawn at. A block long
+                  enough to break across pages, and the repeated footer, are anchored once
+                  per page, hence the filter rather than a single box.
+                */}
+                {highlighted
+                  .filter((rect) => rect.page === i)
+                  .map((rect, index) => (
+                    <div
+                      key={index}
+                      className="anchor-highlight"
+                      style={scaleRect(rect, pageWidth)}
+                      aria-hidden
+                    />
+                  ))}
+              </Page>
             ))}
           </Document>
         )}

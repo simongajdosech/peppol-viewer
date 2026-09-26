@@ -295,19 +295,42 @@ button.badge {
   box-shadow: var(--shadow);
 }
 
-.findings li {
+.findings li + li {
+  border-top: 1px solid var(--border);
+}
+
+/*
+  One row of the panel: a button when the rule has a block on the page to point at, and a
+  plain block when it does not. The grid lives here rather than on the li so both read
+  identically whichever element it turns out to be.
+*/
+.finding {
   display: grid;
   grid-template-columns: 5.5rem minmax(0, 1fr);
   gap: 0.15rem 0.6rem;
+  width: 100%;
   padding: 0.5rem 0.55rem;
+  border: 0;
   border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
   font-size: 0.8rem;
   line-height: 1.4;
+  text-align: left;
 }
 
-.findings li + li {
-  border-top: 1px solid var(--border);
-  border-radius: 0;
+button.finding {
+  cursor: pointer;
+}
+
+button.finding:hover {
+  background: var(--code-bg);
+}
+
+button.finding[aria-pressed='true'] {
+  background: var(--accent-bg);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .findings .rule-id {
@@ -360,6 +383,45 @@ button.badge {
 
 .paper canvas {
   display: block;
+}
+
+/*
+  The highlight over a block of the page.
+
+  It is a child of the <Page>, which positions itself, so these coordinates are the
+  page's own — scaled out of the PDF's points by `scaleRect`. z-index 2 clears the text
+  layer and its spans, which sit at 0 and 1; `multiply` tints the paper without washing
+  out the glyphs underneath; and taking no pointer events leaves the text selectable
+  through it.
+
+  Not `.highlight`: pdfjs uses that class for its own find-in-page highlights, inside
+  the text layer.
+*/
+.anchor-highlight {
+  position: absolute;
+  z-index: 2;
+  border-radius: 2px;
+  background: rgba(255, 213, 0, 0.45);
+  outline: 1.5px solid rgba(214, 158, 0, 0.85);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  animation: anchor-highlight-in 140ms ease-out;
+}
+
+@keyframes anchor-highlight-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anchor-highlight {
+    animation: none;
+  }
 }
 
 /* xml view */
