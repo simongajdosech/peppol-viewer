@@ -13,6 +13,13 @@
   ],
   "type": "module",
   "license": "LGPL-3.0-or-later",
+  "author": "Simon Gajdosech",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simongajdosech/peppol-viewer.git"
+  },
+  "homepage": "https://github.com/simongajdosech/peppol-viewer#readme",
+  "bugs": "https://github.com/simongajdosech/peppol-viewer/issues",
   "sideEffects": [
     "**/*.css"
   ],
