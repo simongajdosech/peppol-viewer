@@ -180,14 +180,7 @@ have one, `ANCHOR_BY_RULE` plus `highlight` is how you put its output on the pag
 
 ## Licence
 
-LGPL-3.0-or-later. `LICENSE` is the Lesser GPL; `COPYING.GPL-3.0` is the GPL text it
-incorporates by reference, and you need both to have the whole licence.
-
-In practice: linking this package into a program of your own — importing it, bundling it,
-shipping it — does not make that program subject to the LGPL. Modifying the package
-itself does, and those changes have to go back out under the same terms.
-
-The bundled typefaces are not covered by it. PT Sans is under the SIL Open Font License,
+MIT — see `LICENSE`. The bundled PT Sans typefaces are under the SIL Open Font License,
 whose text travels with them as `fonts/OFL.txt`.
 
 ## Development
